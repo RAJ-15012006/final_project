@@ -6,7 +6,8 @@ import {
   BulbOutlined,
   CodeOutlined,
   UserOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  RocketOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -22,17 +23,17 @@ export default function Sidebar({ collapsed }) {
   const menuItems = [
     {
       key: '/dashboard',
-      icon: <HomeOutlined />,
+      icon: <HomeOutlined style={{ fontSize: '20px', color: '#00f2ff', filter: 'drop-shadow(0 0 8px rgba(0, 242, 255, 0.4))' }} />,
       label: 'Dashboard',
     },
     {
       key: '/problems',
-      icon: <BlockOutlined />,
+      icon: <BlockOutlined style={{ fontSize: '20px', color: '#00ff88', filter: 'drop-shadow(0 0 8px rgba(0, 255, 136, 0.4))' }} />,
       label: 'Problems',
     },
     {
       key: '/coding-room',
-      icon: <CodeOutlined />,
+      icon: <RocketOutlined style={{ fontSize: '20px', color: '#bc13fe', filter: 'drop-shadow(0 0 8px rgba(188, 19, 254, 0.4))' }} />,
       label: 'Coding Room',
     },
   ];
@@ -43,7 +44,6 @@ export default function Sidebar({ collapsed }) {
       collapsed={collapsed}
       trigger={null}
       width={260}
-      theme="dark"
       style={{
         height: '100vh',
         position: 'fixed',
@@ -51,8 +51,10 @@ export default function Sidebar({ collapsed }) {
         top: 0,
         bottom: 0,
         zIndex: 1000,
-        background: '#121212',
-        borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+        background: 'rgba(255, 255, 255, 0.03)',
+        backdropFilter: 'blur(30px)',
+        WebkitBackdropFilter: 'blur(30px)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}
     >
@@ -82,7 +84,6 @@ export default function Sidebar({ collapsed }) {
       </div>
       
       <Menu
-        theme="dark"
         mode="inline"
         selectedKeys={[location.pathname]}
         style={{ 
@@ -136,6 +137,11 @@ export default function Sidebar({ collapsed }) {
         }
         .futuristic-menu .ant-menu-item .anticon {
           font-size: 18px !important;
+        }
+        .ant-menu-item:hover .anticon {
+          transform: scale(1.2);
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          filter: brightness(1.2) drop-shadow(0 0 12px currentColor) !important;
         }
       `}</style>
     </Sider>

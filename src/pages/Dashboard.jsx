@@ -1,15 +1,18 @@
-import React, { useMemo } from 'react';
-import { Typography, Row, Col, List, Avatar, Space, Button, Progress } from 'antd';
+import React, { useMemo, useState } from 'react';
+import { Typography, Row, Col, List, Avatar, Space, Button, Progress, Card } from 'antd';
 import { 
   TrophyOutlined, 
   ThunderboltOutlined, 
   FireOutlined, 
   CheckCircleOutlined,
-  RiseOutlined
+  RiseOutlined,
+  RocketOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useProgress } from '../context/ProgressContext';
 import { problems } from '../data/problems';
+import GamingNotification from '../components/GamingRoom/GamingNotification';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
@@ -87,7 +90,8 @@ const LEADERBOARD_DATA = [
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { streak, totalSolvedCount, solvedProblems } = useProgress();
+  const { totalSolvedCount, solvedProblems } = useProgress();
+  const navigate = useNavigate();
 
   const dynamicTopics = useMemo(() => calculateTopicProgress(solvedProblems), [solvedProblems]);
   const difficultyStats = useMemo(() => calculateDifficultyStats(solvedProblems), [solvedProblems]);
@@ -107,6 +111,7 @@ export default function Dashboard() {
       color: '#fff',
       borderRadius: '20px'
     }}>
+      <GamingNotification />
       {/* Welcome Section */}
       <div style={{ marginBottom: '60px' }}>
         <Title level={1} style={{ 
@@ -123,6 +128,7 @@ export default function Dashboard() {
         </Title>
         <div className="glowing-underline" style={{ width: '400px', marginTop: '15px' }}></div>
       </div>
+
 
       <Row gutter={[40, 40]}>
         {/* Topic Progress Circular Graph (Center-Left) */}
@@ -460,6 +466,52 @@ export default function Dashboard() {
                 fontSize: '18px', 
                 fontWeight: '900',
                 letterSpacing: '1px',
+                background: 'linear-gradient(135deg, #00f2ff 0%, #bc13fe 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textTransform: 'uppercase',
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace"
+              }}>
+                Pro Coding Arena
+              </Title>
+              <div 
+                  onClick={() => navigate('/coding-room')}
+                  style={{ 
+                    borderRadius: '16px',
+                    padding: '30px 20px',
+                    marginBottom: '40px',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    boxShadow: '0 0 30px rgba(0, 242, 255, 0.1)',
+                    border: '1px solid #00f2ff',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s'
+                  }} className="hover:scale-105 hover:shadow-cyan-lg">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '12px' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#00f2ff', boxShadow: '0 0 10px #00f2ff' }}></div>
+                    <Text style={{ color: '#00f2ff', fontWeight: 'bold', fontSize: '10px', letterSpacing: '2px' }}>SYSTEM ONLINE // MISSION READY</Text>
+                  </div>
+                  <Title level={3} style={{ color: '#fff', margin: 0, fontWeight: '900' }}>ENTER THE PRO ARENA</Title>
+                  <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>Test your skills against elite coders in real-time battles.</Text>
+                  <div style={{
+                    position: 'absolute',
+                    right: '25px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: '24px',
+                    color: '#00f2ff',
+                    opacity: 0.5
+                  }}><RocketOutlined /></div>
+              </div>
+
+              <Title level={4} style={{ 
+                margin: 0, 
+                marginBottom: '20px',
+                fontSize: '18px', 
+                fontWeight: '900',
+                letterSpacing: '1px',
                 background: 'linear-gradient(135deg, #ffcc00 0%, #ff6600 100%)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
@@ -467,22 +519,24 @@ export default function Dashboard() {
                 textTransform: 'uppercase',
                 fontFamily: "'JetBrains Mono', 'Fira Code', monospace"
               }}>
-                Premium
+                Premium Resources
               </Title>
 
               <Space direction="vertical" size={16} style={{ width: '100%' }}>
                 {/* Links and Notes Card */}
-                <div style={{ 
-                  borderRadius: '16px',
-                  padding: '24px 20px',
-                  background: 'linear-gradient(135deg, #00f2ff44 0%, #7d00ff44 100%)',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.2), inset 0 0 20px rgba(0, 242, 255, 0.1)',
-                  border: '1px solid rgba(0, 242, 255, 0.2)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'transform 0.2s, boxShadow 0.2s'
-                }} className="hover:scale-105 hover:shadow-cyan">
+                <div 
+                  onClick={() => navigate('/premium-notes')}
+                  style={{ 
+                    borderRadius: '16px',
+                    padding: '24px 20px',
+                    background: 'linear-gradient(135deg, #00f2ff44 0%, #7d00ff44 100%)',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.2), inset 0 0 20px rgba(0, 242, 255, 0.1)',
+                    border: '1px solid rgba(0, 242, 255, 0.2)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'transform 0.2s, boxShadow 0.2s'
+                  }} className="hover:scale-105 hover:shadow-cyan">
                   <Text style={{ 
                     color: '#fff', 
                     fontSize: '18px', 
@@ -508,55 +562,21 @@ export default function Dashboard() {
                   }} />
                 </div>
 
-                {/* Personalized Learning Path Card */}
-                <div style={{ 
-                  borderRadius: '16px',
-                  padding: '24px 20px',
-                  background: 'linear-gradient(135deg, #ff00ff44 0%, #ff660044 100%)',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.2), inset 0 0 20px rgba(255, 0, 255, 0.1)',
-                  border: '1px solid rgba(255, 0, 255, 0.2)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'transform 0.2s, boxShadow 0.2s'
-                }} className="hover:scale-105 hover:shadow-magenta">
-                  <Text style={{ 
-                    color: '#fff', 
-                    fontSize: '18px', 
-                    fontWeight: '800',
-                    display: 'block',
-                    marginBottom: '8px'
-                  }}>Personalized Learning Path</Text>
-                  <Button type="primary" shape="round" style={{
-                    background: '#fff',
-                    color: '#000',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    marginTop: '10px'
-                  }}>Start Learning</Button>
-                  <div style={{
-                    position: 'absolute',
-                    right: '-20px',
-                    bottom: '-20px',
-                    width: '100px',
-                    height: '100px',
-                    background: 'radial-gradient(circle, rgba(255, 0, 255, 0.4) 0%, transparent 70%)',
-                    borderRadius: '50%'
-                  }} />
-                </div>
 
                 {/* Interview Simulator Card */}
-                <div style={{ 
-                  borderRadius: '16px',
-                  padding: '24px 20px',
-                  background: 'linear-gradient(135deg, #00ff8844 0%, #00f2ff44 100%)',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.2), inset 0 0 20px rgba(0, 255, 136, 0.1)',
-                  border: '1px solid rgba(0, 255, 136, 0.2)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'transform 0.2s, boxShadow 0.2s'
-                }} className="hover:scale-105 hover:shadow-green">
+                <div 
+                  onClick={() => navigate('/interview-simulator')}
+                  style={{ 
+                    borderRadius: '16px',
+                    padding: '24px 20px',
+                    background: 'linear-gradient(135deg, #00ff8844 0%, #00f2ff44 100%)',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.2), inset 0 0 20px rgba(0, 255, 136, 0.1)',
+                    border: '1px solid rgba(0, 255, 136, 0.2)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'transform 0.2s, boxShadow 0.2s'
+                  }} className="hover:scale-105 hover:shadow-green">
                   <Text style={{ 
                     color: '#fff', 
                     fontSize: '18px', 
@@ -581,6 +601,7 @@ export default function Dashboard() {
                     borderRadius: '50%'
                   }} />
                 </div>
+
               </Space>
             </div>
         </Col>

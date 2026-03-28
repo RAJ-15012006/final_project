@@ -21,7 +21,6 @@ const { Search } = Input;
 
 export default function Problems() {
   const { isSolved } = useProgress();
-  const { theme } = useTheme();
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('All');

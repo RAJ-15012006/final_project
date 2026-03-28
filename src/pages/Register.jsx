@@ -18,27 +18,48 @@ export default function Register() {
   const { theme, toggleTheme } = useTheme();
   const [messageApi, contextHolder] = message.useMessage();
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     setLoading(true);
-
-    // Simulate API registration call delay
-    setTimeout(() => {
-      const result = registerUser({
-        id: values.username,
-        name: values.fullName,
-        email: values.email,
-        password: values.password
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: values.username,
+          name: values.fullName,
+          email: values.email,
+          password: values.password
+        })
       });
 
-      if (result.success) {
-        messageApi.success('Registration successful! Logging you in...');
-        login(result.user);
-        setTimeout(() => navigate('/dashboard'), 1000); // Small delay to show message
+      if (response.ok) {
+        // Auto-login after successful registration
+        const loginRes = await fetch('http://127.0.0.1:8000/api/auth/login-json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: values.username,
+            password: values.password
+          })
+        });
+        
+        if (loginRes.ok) {
+           const data = await loginRes.json();
+           login(data.user, data.access_token);
+        }
+        
+        messageApi.success('Registration successful!');
+        setTimeout(() => navigate('/dashboard'), 1000);
       } else {
-        messageApi.error(result.message || 'Registration failed');
+        const err = await response.json();
+        messageApi.error(err.detail || 'Registration failed');
       }
+    } catch (error) {
+      console.error("Registration error:", error);
+      messageApi.error('Unable to connect to server');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (

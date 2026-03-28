@@ -9,7 +9,15 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Problems from './pages/Problems';
 import ProblemArea from './pages/ProblemArea';
+import GamingRoom from './pages/GamingRoom';
+import PremiumNotes from './pages/PremiumNotes';
+import CompanyPatterns from './pages/CompanyPatterns';
+import ProblemWiseNotes from './pages/ProblemWiseNotes';
+import DirectResources from './pages/DirectResources';
+import TopicWiseMistakes from './pages/TopicWiseMistakes';
+import InterviewSimulator from './pages/InterviewSimulator';
 import MainLayout from './components/MainLayout';
+import ScrollToTop from './components/ScrollToTop';
 import { ConfigProvider, theme as antdTheme } from 'antd';
 import './App.css';
 
@@ -47,10 +55,66 @@ function AppContent() {
         } 
       />
       <Route 
+        path="/gaming-room" 
+        element={
+          <ProtectedRoute>
+            <GamingRoom />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/coding-room" 
         element={
           <ProtectedRoute>
-            <MainLayout><Problems /></MainLayout>
+            <GamingRoom />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/company-patterns" 
+        element={
+          <ProtectedRoute>
+            <CompanyPatterns />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/problem-wise-notes" 
+        element={
+          <ProtectedRoute>
+            <ProblemWiseNotes />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/premium-notes" 
+        element={
+          <ProtectedRoute>
+            <PremiumNotes />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/direct-resources" 
+        element={
+          <ProtectedRoute>
+            <DirectResources />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/topic-wise-mistakes" 
+        element={
+          <ProtectedRoute>
+            <TopicWiseMistakes />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/interview-simulator" 
+        element={
+          <ProtectedRoute>
+            <InterviewSimulator />
           </ProtectedRoute>
         } 
       />
@@ -114,6 +178,7 @@ function AppWrapper() {
         <ProgressProvider>
           <LayoutProvider>
             <Router>
+              <ScrollToTop />
               <AppContent />
             </Router>
           </LayoutProvider>

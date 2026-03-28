@@ -4,10 +4,10 @@ import Sidebar from './Sidebar';
 import { 
   MoreOutlined, UserOutlined, LogoutOutlined, SettingOutlined, 
   DownOutlined, BellOutlined, LeftSquareOutlined, BorderTopOutlined, 
-  FullscreenOutlined, AppstoreOutlined 
+  FullscreenOutlined, AppstoreOutlined, ThunderboltOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardBG from '../assets/dashboard_bg2.jpg';
 import { problems } from '../data/problems';
 
@@ -16,6 +16,7 @@ const { Text } = Typography;
 
 export default function MainLayout({ children, forceCollapse = false }) {
   const { logout, user } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = React.useState(forceCollapse);
 
@@ -127,25 +128,57 @@ export default function MainLayout({ children, forceCollapse = false }) {
                    </div>
                 )}
 
-                <Button 
-                    type="text" 
-                    icon={<BellOutlined />} 
-                    style={{ 
-                        fontSize: '20px', 
-                        color: 'var(--neon-cyan)',
-                        background: 'rgba(0, 242, 255, 0.1)',
-                        border: '1px solid var(--neon-cyan)',
-                        borderRadius: '50%',
-                        width: '40px',
-                        height: '40px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.3s',
-                        boxShadow: '0 0 10px rgba(0, 242, 255, 0.2)'
+                <Dropdown
+                    menu={{
+                        items: [
+                            {
+                                key: 'coding-room-invite',
+                                label: (
+                                    <div style={{ padding: '8px', maxWidth: '280px' }} onClick={() => navigate('/coding-room')}>
+                                        <Space align="start" size={12}>
+                                            <Avatar icon={<ThunderboltOutlined />} style={{ background: 'var(--neon-cyan)', color: '#000' }} />
+                                            <div>
+                                                <Text strong style={{ color: 'var(--neon-cyan)', display: 'block' }}>CODING ROOM INVITE</Text>
+                                                <Text size="small" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>
+                                                    CyberCoder is waiting for players to start a speed challenge!
+                                                </Text>
+                                            </div>
+                                        </Space>
+                                    </div>
+                                )
+                            }
+                        ]
                     }}
-                    className="notification-trigger"
-                />
+                    trigger={['click']}
+                    placement="bottomRight"
+                    dropdownStyle={{ 
+                        background: 'rgba(10, 10, 20, 0.95)', 
+                        border: '1px solid var(--neon-cyan)',
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(20px)',
+                        padding: '8px'
+                    }}
+                >
+                    <Button 
+                        type="text" 
+                        icon={<BellOutlined />} 
+                        style={{ 
+                            fontSize: '20px', 
+                            color: 'var(--neon-cyan)',
+                            background: 'rgba(0, 242, 255, 0.1)',
+                            border: '1px solid var(--neon-cyan)',
+                            borderRadius: '50%',
+                            width: '40px',
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.3s',
+                            boxShadow: '0 0 10px rgba(0, 242, 255, 0.2)'
+                        }}
+                        className="notification-trigger"
+                    />
+                </Dropdown>
                 <Dropdown 
                     menu={{ 
                       items: [

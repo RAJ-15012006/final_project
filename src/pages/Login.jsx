@@ -18,20 +18,33 @@ export default function Login() {
   const { theme, toggleTheme } = useTheme();
   const [messageApi, contextHolder] = message.useMessage();
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const user = findUser(values.username, values.password);
-      if (user) {
-        login(user);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/auth/login-json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: values.username,
+          password: values.password
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        login(data.user, data.access_token);
         messageApi.success('Login successful!');
         navigate('/dashboard');
       } else {
-        messageApi.error('Invalid username or password');
+        const err = await response.json();
+        messageApi.error(err.detail || 'Invalid username or password');
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      messageApi.error('Unable to connect to server');
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (

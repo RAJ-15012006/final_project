@@ -1,0 +1,124 @@
+﻿
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\components\Chatbot.jsx
+  25:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  23 |   useEffect(() => {
+  24 |     if (problemData) {
+> 25 |       setMessages([
+     |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  26 |         {
+  27 |           id: Date.now(),
+  28 |           sender: 'bot',  react-hooks/set-state-in-effect
+  91:16  error  'node' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\components\GamingRoom\GamingArena.jsx
+  29:57  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  27 |   const question = useMemo(() => {
+  28 |     const filtered = problems.filter(p => p.difficulty === settings.difficulty && p.topics.includes(settings.topic));
+> 29 |     if (filtered.length > 0) return filtered[Math.floor(Math.random() * filtered.length)];
+     |                                                         ^^^^^^^^^^^^^ Cannot call impure function
+  30 |     return problems[0]; // Fallback
+  31 |   }, [settings.difficulty, settings.topic]);
+  32 |  react-hooks/purity
+  33:16  error    'setCode' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    no-unused-vars
+  87:6   warning  React Hook useEffect has a missing dependency: 'handleAutoSubmit'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\components\GamingRoom\LeaderboardOverlay.jsx
+  18:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  16 |
+  17 |   useEffect(() => {
+> 18 |     setShow(true);
+     |     ^^^^^^^ Avoid calling setState() directly within an effect
+  19 |   }, []);
+  20 |
+  21 |   const winners = [  react-hooks/set-state-in-effect
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\components\MainLayout.jsx
+  136:103  error  'navigate' is not defined  no-undef
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\components\Sidebar.jsx
+  21:11  error  'logout' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  21:19  error  'user' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\context\AuthContext.jsx
+   1:54  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                no-unused-vars
+  29:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\context\LayoutContext.jsx
+  15:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\context\ProgressContext.jsx
+   54:32  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  52 |     // Check current streak (consecutive days including today or starting from yesterday)
+  53 |     const today = new Date().toISOString().split('T')[0];
+> 54 |     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+     |                                ^^^^^^^^^^ Cannot call impure function
+  55 |     
+  56 |     let checkDate = activity[today] ? today : (activity[yesterday] ? yesterday : null);
+  57 |       react-hooks/purity
+  125:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-refresh/only-export-components
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\context\ThemeContext.jsx
+   1:54  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                no-unused-vars
+  24:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\pages\Dashboard.jsx
+   1:26  error  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u           no-unused-vars
+  94:9   error  'navigate' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\pages\GamingRoom.jsx
+   1:27  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+  24:15  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  22 |     difficulty: 'Easy',
+  23 |     topic: 'Arrays',
+> 24 |     roomCode: Math.random().toString(36).substring(2, 8).toUpperCase()
+     |               ^^^^^^^^^^^^^ Cannot call impure function
+  25 |   });
+  26 |   const [results, setResults] = useState(null);
+  27 |  react-hooks/purity
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\pages\ProblemArea.jsx
+  33:9  error  'problemPanelRef' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+  41:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  39 |   useEffect(() => {
+  40 |     if (problemData) {
+> 41 |       setEditorContent(problemData.boilerplate);
+     |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  42 |     } else {
+  43 |       navigate('/dashboard');
+  44 |     }  react-hooks/set-state-in-effect
+
+C:\Users\Yashe\VS code projects\AI-Chatbot\leetcode-tutor-ui\src\pages\Problems.jsx
+  16:10  error  'useTheme' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+Γ£û 23 problems (22 errors, 1 warning)
+

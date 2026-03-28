@@ -4,31 +4,34 @@ import { useAuth } from './AuthContext';
 const ProgressContext = createContext(null);
 
 export const ProgressProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [solvedHistory, setSolvedHistory] = useState([]);
 
   // Load progress when user changes
   useEffect(() => {
-    if (user) {
-      const saved = localStorage.getItem(`progress_v2_${user.id}`);
-      if (saved) {
-        setSolvedHistory(JSON.parse(saved));
-      } else {
-        // Migration from legacy array of strings
-        const legacy = localStorage.getItem(`progress_${user.id}`);
-        if (legacy) {
-          const ids = JSON.parse(legacy);
-          const migrated = ids.map(id => ({ problemId: id, solvedAt: new Date().toISOString() }));
-          setSolvedHistory(migrated);
-          localStorage.setItem(`progress_v2_${user.id}`, JSON.stringify(migrated));
-        } else {
+    const fetchProgress = async () => {
+      if (user && token) {
+        try {
+          const res = await fetch('http://127.0.0.1:8000/api/progress/', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setSolvedHistory(data);
+          } else {
+            console.error("Failed to fetch progress from API");
+            setSolvedHistory([]);
+          }
+        } catch (err) {
+          console.error("Failed to connect to progress API:", err);
           setSolvedHistory([]);
         }
+      } else {
+        setSolvedHistory([]);
       }
-    } else {
-      setSolvedHistory([]);
-    }
-  }, [user]);
+    };
+    fetchProgress();
+  }, [user, token]);
 
   // Derived state for solved problem IDs
   const solvedProblems = useMemo(() => solvedHistory.map(item => item.problemId), [solvedHistory]);
@@ -51,7 +54,9 @@ export const ProgressProvider = ({ children }) => {
     
     // Check current streak (consecutive days including today or starting from yesterday)
     const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = yesterdayDate.toISOString().split('T')[0];
     
     let checkDate = activity[today] ? today : (activity[yesterday] ? yesterday : null);
     
@@ -92,17 +97,31 @@ export const ProgressProvider = ({ children }) => {
   }, [solvedHistory]);
 
   // Mark a problem as solved
-  const markAsSolved = (problemId) => {
-    if (!user) return;
+  const markAsSolved = async (problemId) => {
+    if (!user || !token) return;
     
+    // Optimistic UI update
+    const newItem = { problemId, solvedAt: new Date().toISOString() };
     setSolvedHistory(prev => {
       if (prev.find(item => item.problemId === problemId)) return prev;
-      
-      const newItem = { problemId, solvedAt: new Date().toISOString() };
-      const next = [...prev, newItem];
-      localStorage.setItem(`progress_v2_${user.id}`, JSON.stringify(next));
-      return next;
+      return [...prev, newItem];
     });
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/progress/solved', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ problemId })
+      });
+      if (!res.ok) {
+        console.error("Failed to save progress on server");
+      }
+    } catch (err) {
+      console.error("Error saving progress:", err);
+    }
   };
 
   const isSolved = (problemId) => solvedProblems.includes(problemId);

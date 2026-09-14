@@ -88,7 +88,7 @@ async def listener_heartbeat():
 
 @app.get("/api/speaking-status", tags=["Voice"])
 async def speaking_status():
-    return {"speaking": false}
+    return {"speaking": False}
 
 @app.post("/api/voice-command", tags=["Voice"])
 async def voice_command():

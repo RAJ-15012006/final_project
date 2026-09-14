@@ -6,8 +6,10 @@ import {
 import {
   UserOutlined, SettingOutlined, LikeOutlined, DislikeOutlined,
   CopyOutlined, SendOutlined, BulbOutlined, ReloadOutlined,
-  CompassOutlined, DashboardOutlined, WarningOutlined, CodeOutlined
+  CompassOutlined, DashboardOutlined, WarningOutlined, CodeOutlined,
+  ArrowRightOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -26,9 +28,9 @@ import {
 
 const { Text } = Typography;
 
-// ── Markdown Renderer ────────────────────────────────────────────────────────
+// ── Markdown Renderer with In-App Navigation ─────────────────────────────────
 
-function MarkdownRenderer({ content, theme }) {
+function MarkdownRenderer({ content, theme, navigate }) {
   const isDark = theme === 'dark';
 
   const copyToClipboard = (text) => {
@@ -40,6 +42,40 @@ function MarkdownRenderer({ content, theme }) {
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
+        a({ href, children, ...props }) {
+          const isInternal = href && (href.startsWith('/') || href.startsWith('#'));
+          if (isInternal && navigate) {
+            return (
+              <a
+                href={href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(href);
+                }}
+                style={{
+                  color: isDark ? '#60a5fa' : '#2563eb',
+                  fontWeight: 600,
+                  textDecoration: 'underline',
+                  cursor: 'pointer'
+                }}
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          }
+          return (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: isDark ? '#60a5fa' : '#2563eb', fontWeight: 600 }}
+              {...props}
+            >
+              {children}
+            </a>
+          );
+        },
         code({ node, inline, className, children, ...props }) {
           const match = /language-(\w+)/.exec(className || '');
           return !inline && match ? (
@@ -106,9 +142,22 @@ function MarkdownRenderer({ content, theme }) {
 function buildWelcomeMessage(userName, problemData) {
   const user = userName || 'Student';
   if (problemData) {
-    return `### Welcome, **${user}**! 👋\n\nI'm **JARVIS**, your AI competitive programming mentor. I see we are working on **${problemData.title}** (${problemData.difficulty || 'DSA'}).\n\nChoose an action below or ask any question:\n- 💡 **Hint**: Get progressive clues without spoiling the answer\n- 🧠 **Approach**: Learn the algorithmic intuition and strategy\n- ⏱️ **Complexity**: Analyze Big-O Time and Space requirements\n- ⚠️ **Pitfalls**: Review tricky edge cases to avoid bugs\n- 💻 **Solution Code**: View complete, well-commented code`;
+    return `### Welcome, **${user}**! 👋
+
+I'm **JARVIS**, your AI competitive programming mentor. I see we are analyzing **${problemData.title}** (${problemData.difficulty || 'DSA'}).
+
+🎯 **Pedagogical Rule**: I will **never** dump the final code immediately. Real learning happens when you discover the approach yourself!
+
+📚 **Your 3-Stage Workflow**:
+1. 💡 **5 Progressive Hints** (Levels 1 → 5): Gentle nudges from conceptual pattern to detailed logic.
+2. 🧠 **Algorithmic Approach**: Unlocked once hints are explored; explains the optimal strategy without raw code.
+3. 💻 **Solution Code & Next Steps**: Full commented code, immediate editor tasks, and your **recommended next question** to practice!
+
+Click **💡 Hint 1/5** below or ask any question to get started!`;
   }
-  return `### Welcome, **${user}**! 👋\n\nI'm **JARVIS**, your AI competitive programming mentor. Ask me any DSA question or select a problem to explore hints, approaches, complexities, and code solutions!`;
+  return `### Welcome, **${user}**! 👋
+
+I'm **JARVIS**, your AI competitive programming mentor. Select any problem from the **[Problems Catalog](/problems)** to begin the 5-stage hint and learning workflow!`;
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -119,6 +168,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
   const [isTyping, setIsTyping] = useState(false);
   const [hintLevel, setHintLevel] = useState(1);
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
   const isDark = theme === 'dark';
@@ -144,11 +194,11 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
     setMessages(prev => [...prev, {
       id: Date.now(),
       sender: 'bot',
-      text: `⚠️ **Error:** ${errText}\n\nPlease check that your backend server is active at \`http://localhost:8000\`.`,
+      text: `⚠️ **Notice:** ${errText}\n\nPlease verify your backend connection at \`http://localhost:8000\`.`,
     }]);
   };
 
-  // ── 1. Open-ended Query ─────────────────────────────────────────────────────
+  // ── 1. Open-ended Query with Pedagogical Guard ───────────────────────────────
   const handleSend = async () => {
     const msg = inputValue.trim();
     if (!msg || isTyping) return;
@@ -156,6 +206,30 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
     setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: msg }]);
     setInputValue('');
     setIsTyping(true);
+
+    const lower = msg.toLowerCase();
+    const isAskingForDirectCode = (
+      lower.includes("give me the code") ||
+      lower.includes("give me the answer") ||
+      lower.includes("give me solution") ||
+      lower.includes("just give code") ||
+      lower.includes("solve this for me")
+    );
+
+    // If student asks for full answer immediately without having taken hints
+    if (isAskingForDirectCode && hintLevel <= 2) {
+      setTimeout(() => {
+        addBotMessage(
+          `### 🧠 Let's develop your intuition first!\n\n` +
+          `Jumping straight to the final code won't prepare you for technical interviews.\n\n` +
+          `Let's start with **Hint 1 of 5**:\n` +
+          `> Think about what core data structure or algorithmic pattern naturally represents this problem.\n\n` +
+          `*(Click **💡 Hint ${hintLevel}/5** above to receive your first guided clue!)*`
+        );
+        setIsTyping(false);
+      }, 500);
+      return;
+    }
 
     try {
       const data = await askTutor(msg, problemData?.title || null);
@@ -168,18 +242,25 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
     }
   };
 
-  // ── 2. Progressive Hint ─────────────────────────────────────────────────────
+  // ── 2. Progressive 5-Stage Hints ────────────────────────────────────────────
   const handleHint = async () => {
     if (!problemData?.title || isTyping) return;
 
-    const userMsg = `💡 Give me Hint Level ${hintLevel} for ${problemData.title}`;
+    if (hintLevel > 5) {
+      // All 5 hints exhausted -> transition to Approach
+      handleApproach();
+      return;
+    }
+
+    const currentLvl = hintLevel;
+    const userMsg = `💡 Give me Hint Level ${currentLvl} of 5 for ${problemData.title}`;
     setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: userMsg }]);
     setIsTyping(true);
 
     try {
-      const data = await getHint(problemData.title, hintLevel);
+      const data = await getHint(problemData.title, currentLvl);
       addBotMessage(data.response || 'Could not generate hint.');
-      setHintLevel(prev => Math.min(prev + 1, 3));
+      setHintLevel(prev => prev + 1);
     } catch (err) {
       console.error('[Chatbot] getHint error:', err);
       addErrorMessage(err.message || 'Could not generate hint.');
@@ -245,11 +326,11 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
     }
   };
 
-  // ── 6. Show Solution Code ───────────────────────────────────────────────────
+  // ── 6. Show Solution Code & Next Question ───────────────────────────────────
   const handleCode = async () => {
     if (!problemData?.title || isTyping) return;
 
-    const userMsg = `💻 Provide the full solution code for ${problemData.title}`;
+    const userMsg = `💻 Provide the full solution code and recommended next question for ${problemData.title}`;
     setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: userMsg }]);
     setIsTyping(true);
 
@@ -317,7 +398,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
               <span style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#9ca3af' : '#64748b' }}>
-                Online · Groq (LLaMA 3.3) · RAG
+                Online · 5-Stage Hints · RAG
               </span>
             </div>
           </div>
@@ -332,6 +413,49 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
           />
         </Tooltip>
       </div>
+
+      {/* ── Hint Progress Tracker ────────────────────────────────────────────── */}
+      {problemData && (
+        <div style={{
+          padding: '6px 16px',
+          background: isDark ? '#172554' : '#eff6ff',
+          borderBottom: `1px solid ${isDark ? '#1e3a8a' : '#dbeafe'}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: '11px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 600, color: isDark ? '#93c5fd' : '#1d4ed8' }}>
+              Hint Progress:
+            </span>
+            <div style={{ display: 'flex', gap: '3px' }}>
+              {[1, 2, 3, 4, 5].map((lvl) => (
+                <span
+                  key={lvl}
+                  style={{
+                    width: '9px',
+                    height: '9px',
+                    borderRadius: '50%',
+                    background: lvl < hintLevel
+                      ? '#10b981'
+                      : (isDark ? '#334155' : '#cbd5e1'),
+                    border: lvl === hintLevel
+                      ? '1px solid #3b82f6'
+                      : 'none',
+                    display: 'inline-block',
+                    transition: 'all 0.3s'
+                  }}
+                  title={`Hint ${lvl}`}
+                />
+              ))}
+            </div>
+          </div>
+          <span style={{ color: isDark ? '#bfdbfe' : '#2563eb', fontWeight: 500 }}>
+            {hintLevel <= 5 ? `Next: Hint ${hintLevel} of 5` : 'All 5 hints explored!'}
+          </span>
+        </div>
+      )}
 
       {/* ── Chat Messages ────────────────────────────────────────────────────── */}
       <div style={{
@@ -390,7 +514,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
                     {msg.sender === 'user' ? (
                       <span style={{ color: '#ffffff', whiteSpace: 'pre-wrap' }}>{msg.text}</span>
                     ) : (
-                      <MarkdownRenderer content={msg.text} theme={theme} />
+                      <MarkdownRenderer content={msg.text} theme={theme} navigate={navigate} />
                     )}
                   </div>
                   {msg.sender === 'bot' && (
@@ -422,7 +546,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
               gap: '6px'
             }}>
               <span style={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b', fontWeight: 500 }}>
-                JARVIS is analyzing...
+                JARVIS is formulating guidance...
               </span>
               <div className="typing-dot" style={{ width: '5px', height: '5px', background: '#3b82f6', borderRadius: '50%', animation: 'typing 1.4s infinite ease-in-out both' }} />
               <div className="typing-dot" style={{ width: '5px', height: '5px', background: '#3b82f6', borderRadius: '50%', animation: 'typing 1.4s infinite ease-in-out both', animationDelay: '0.2s' }} />
@@ -433,7 +557,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Quick Action Workflow Buttons ────────────────────────────────────── */}
+      {/* ── 5-Stage Progressive Learning Buttons ──────────────────────────────── */}
       {problemData && (
         <div style={{
           padding: '10px 14px',
@@ -444,19 +568,25 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
           overflowX: 'auto',
           whiteSpace: 'nowrap'
         }}>
-          {/* 1. Progressive Hint */}
+          {/* 1. Progressive 5-Hint Button */}
           <button
             onClick={handleHint}
             disabled={isTyping}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px',
-              padding: '6px 12px',
+              gap: '6px',
+              padding: '6px 14px',
               borderRadius: '20px',
-              border: isDark ? '1px solid #059669' : '1px solid #10b981',
-              background: isDark ? '#064e3b' : '#ecfdf5',
-              color: isDark ? '#6ee7b7' : '#047857',
+              border: hintLevel <= 5
+                ? (isDark ? '1px solid #059669' : '1px solid #10b981')
+                : (isDark ? '1px solid #3b82f6' : '1px solid #2563eb'),
+              background: hintLevel <= 5
+                ? (isDark ? '#064e3b' : '#ecfdf5')
+                : (isDark ? '#1e3a8a' : '#eff6ff'),
+              color: hintLevel <= 5
+                ? (isDark ? '#6ee7b7' : '#047857')
+                : (isDark ? '#93c5fd' : '#1d4ed8'),
               fontSize: '12px',
               fontWeight: 600,
               cursor: isTyping ? 'not-allowed' : 'pointer',
@@ -464,7 +594,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
               transition: 'all 0.2s'
             }}
           >
-            <BulbOutlined /> Hint {hintLevel}/3
+            <BulbOutlined /> {hintLevel <= 5 ? `Hint ${hintLevel}/5` : 'All 5 Hints Used → Unlock Approach'}
           </button>
 
           {/* 2. Approach */}
@@ -475,7 +605,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '5px',
-              padding: '6px 12px',
+              padding: '6px 14px',
               borderRadius: '20px',
               border: isDark ? '1px solid #2563eb' : '1px solid #3b82f6',
               background: isDark ? '#1e3a8a' : '#eff6ff',
@@ -498,7 +628,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '5px',
-              padding: '6px 12px',
+              padding: '6px 14px',
               borderRadius: '20px',
               border: isDark ? '1px solid #7c3aed' : '1px solid #8b5cf6',
               background: isDark ? '#4c1d95' : '#f5f3ff',
@@ -521,7 +651,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '5px',
-              padding: '6px 12px',
+              padding: '6px 14px',
               borderRadius: '20px',
               border: isDark ? '1px solid #d97706' : '1px solid #f59e0b',
               background: isDark ? '#78350f' : '#fffbeb',
@@ -544,7 +674,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '5px',
-              padding: '6px 12px',
+              padding: '6px 14px',
               borderRadius: '20px',
               border: isDark ? '1px solid #dc2626' : '1px solid #ef4444',
               background: isDark ? '#7f1d1d' : '#fef2f2',
@@ -556,7 +686,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
               transition: 'all 0.2s'
             }}
           >
-            <CodeOutlined /> Show Code
+            <CodeOutlined /> Show Code & Next Step
           </button>
         </div>
       )}
@@ -580,7 +710,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
         }}>
           <textarea
             rows={2}
-            placeholder="Ask JARVIS anything about this problem... (e.g. 'How to optimize space?')"
+            placeholder="Ask JARVIS anything about this problem... (e.g. 'Can we use two pointers?')"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => {

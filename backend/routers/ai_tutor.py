@@ -44,8 +44,8 @@ class ProblemActionRequest(BaseModel):
 class HintRequest(BaseModel):
     problem_title: str = Field(..., min_length=1,
                                description="LeetCode problem title")
-    hint_level: int = Field(1, ge=1, le=3,
-                            description="Hint level: 1=gentle, 2=stronger, 3=near-approach")
+    hint_level: int = Field(1, ge=1, le=5,
+                            description="Hint level: 1 to 5 progressive nudges")
 
 class CodeRequest(BaseModel):
     problem_title: str = Field(..., min_length=1,

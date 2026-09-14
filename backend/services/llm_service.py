@@ -1,12 +1,13 @@
 """
 llm_service.py
 --------------
-Handles all communication with the Groq LLM API.
-Uses prompt engineering to constrain the AI to act as a
-structured competitive-programming tutor.
-
-Groq provides ultra-fast inference for open-source models like
-LLaMA 3.3 70B, which is used here as the AI backbone.
+Handles communication with the Groq LLM API.
+Enforces the 5-Stage Progressive Hint and Pedagogical Tutoring Pipeline:
+  - 5 Levels of Progressive Hints (from gentle conceptual nudge to step-by-step logic)
+  - Full Algorithmic Approach (unlocked when hints are exhausted)
+  - Clean Solution Code (only when approach has been reviewed)
+  - Next Action & Next Question Recommendation from the platform's catalog
+  - Guidance on project tabs (Gaming Room, Topic-Wise Mistakes, Company Patterns, etc.)
 """
 
 import os
@@ -21,41 +22,59 @@ _client = Groq(api_key=os.getenv("GROQ_API_KEY", ""))
 # Default model supported on this account
 GROQ_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
 
+# ── Available Platform Tabs ───────────────────────────────────────────────────
+PROJECT_TABS = """
+The platform contains the following accessible tabs for the student:
+- /dashboard : User profile, current streak, problems solved stats
+- /problems : Complete catalog of 60 LeetCode problems (Array, DP, Stack, Trees, Graphs, etc.)
+- /problem/:id : Interactive coding workspace with code editor, test runner, and JARVIS AI tutor
+- /gaming-room : 1v1 Live Coding Arena & Head-to-Head challenges with leaderboard points
+- /company-patterns : FAANG & Top Tech company-specific coding patterns
+- /problem-wise-notes : Curated problem notes and algorithmic breakdowns
+- /premium-notes : Comprehensive DSA cheatsheets and core theory
+- /topic-wise-mistakes : Common pitfalls, antipatterns, and bug traps categorized by DSA topic
+- /interview-simulator : AI-powered mock interview environment
+"""
+
 # ── Master System Prompt (Prompt Engineering) ─────────────────────────────────
-SYSTEM_PROMPT = """You are JARVIS — an AI tutor specialized exclusively in competitive programming and LeetCode problem-solving.
+SYSTEM_PROMPT = f"""You are JARVIS — an elite AI tutor specialized exclusively in competitive programming and LeetCode problem-solving.
 
-Your PRIMARY goal is to TEACH, not to immediately reveal answers.
+YOUR CORE PEDAGOGICAL PHILOSOPHY:
+You TEACH students how to THINK, instead of spoon-feeding them answers.
+A student will NOT learn if they are immediately handed the final solution.
 
-## Behaviour Rules
-1. NEVER dump the complete solution immediately unless the student explicitly asks for "the code" or "the full solution".
-2. Always begin by confirming your understanding of what the student is asking.
-3. Guide students using the Socratic method — ask leading questions when appropriate.
-4. Structure every substantive response using these sections (include only relevant ones):
+## STRICT BEHAVIOR RULES
+1. **NEVER provide the direct code answer immediately!**
+   - Whether the user asks "Give me the answer", "Solve this", or "Give me the code", you must decline to immediately dump the code.
+   - Instead, guide them through the 5 progressive hint stages first, then explain the approach, and only provide code once they have worked through the intuition.
 
-   ### 🧠 Problem Understanding
-   Restate the problem simply in your own words.
+2. **5-Stage Progressive Hint Framework**:
+   - **Hint 1/5 (Conceptual Nudge)**: Point out what broad data structure or pattern to consider. Zero algorithm details.
+   - **Hint 2/5 (Key Observation)**: Reveal the critical problem invariant or mathematical insight.
+   - **Hint 3/5 (Overcoming Brute Force)**: Explain why a naive approach is inefficient and what redundant work can be pruned.
+   - **Hint 4/5 (Algorithmic Framework)**: Outline the state variables, pointers, or transitions to maintain.
+   - **Hint 5/5 (Near-Solution Logic)**: Walk through the exact decision rules and edge cases in plain English (still NO code).
 
-   ### 🔑 Key Observation
-   Point out the critical insight that unlocks the solution.
+3. **Approach Stage**:
+   - Unlocked after the 5 hints or when the student is completely stuck.
+   - Detail the full algorithmic intuition, step-by-step logic, and Big-O Time/Space complexity.
 
-   ### 💡 Hint
-   Provide a gentle nudge (increase detail if the student asks for another hint).
+4. **Code Solution Stage**:
+   - Provided only after hints/approach have been explored.
+   - Provide clean, well-commented code in the requested language (Java, Python, C++).
 
-   ### ⚡ Approach
-   Explain the algorithm step-by-step (no code yet unless requested).
+5. **NEXT STEP & NEXT QUESTION RECOMMENDATION (Mandatory in every final response)**:
+   Whenever you finish explaining an approach or solution code, you MUST always include:
+   - 🎯 **Your Immediate Next Step**: What the student should do right now in the editor (e.g. implement it, test with an edge case like empty string).
+   - 🚀 **Recommended Next Question**: Suggest the logical NEXT problem from the platform catalog (with problem ID and title) to reinforce the learned pattern.
+   - 🧭 **Explore Platform Tabs**: Direct the student to relevant tabs:
+     - Visit `/topic-wise-mistakes` to see common pitfalls for this topic
+     - Try `/gaming-room` to battle a peer on this topic
+     - Check `/company-patterns` for FAANG interview frequency
 
-   ### 📊 Complexity
-   State Time and Space complexity with brief justification.
+{PROJECT_TABS}
 
-   ### ⚠️ Common Mistakes
-   Mention pitfalls to watch out for.
-
-   ### 💻 Code (only when explicitly requested)
-   Provide clean, commented code with explanations.
-
-5. Use **Markdown formatting** for readability.
-6. Be encouraging, patient, and positive.
-7. If the question is not about competitive programming or DSA, politely redirect.
+6. Use clean, professional **Markdown formatting** with KaTeX math ($O(N)$) for readability.
 """
 
 
@@ -70,7 +89,6 @@ def _chat(messages: list[dict], max_tokens: int = 750) -> str:
         "qwen/qwen3.6-27b",
         "openai/gpt-oss-120b"
     ]
-    # Remove duplicates while preserving order
     seen = set()
     models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
 
@@ -98,23 +116,16 @@ def _chat(messages: list[dict], max_tokens: int = 750) -> str:
 
 def get_tutor_response(user_message: str, rag_context: str = "") -> str:
     """
-    Generates a tutoring response from the Groq LLM.
-
-    Args:
-        user_message: The student's question or message.
-        rag_context: Optional context retrieved from the RAG vector database.
-
-    Returns:
-        A formatted Markdown string response from the AI tutor.
+    Generates an open-ended tutoring response adhering strictly to pedagogical guidance.
     """
-    # Build the user content — prepend RAG context if available
     user_content = ""
     if rag_context:
-        user_content += (
-            "## Relevant Knowledge Base Context\n\n"
-            f"{rag_context}\n\n---\n\n"
-        )
-    user_content += f"## Student Question\n\n{user_message}"
+        user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
+    user_content += (
+        f"## Student Message\n\n{user_message}\n\n"
+        "Remember: DO NOT reveal the final code solution if they are asking for initial help. "
+        "Guide them Socratically or give them the appropriate hint level (1-5)."
+    )
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -129,33 +140,41 @@ def get_hint_chain_response(
     rag_context: str = ""
 ) -> str:
     """
-    Provides a progressive hint for a given problem at a specific hint level.
-
-    Args:
-        problem_title: Name of the LeetCode problem.
-        hint_level: 1 = gentle nudge, 2 = stronger hint, 3 = near-full approach.
-        rag_context: Optional context from the RAG vector database.
-
-    Returns:
-        A formatted hint string.
+    Provides a progressive hint across 5 distinct levels.
     """
     hint_descriptions = {
-        1: "a very gentle nudge — just point to what data structure or algorithmic pattern to think about. Do NOT reveal the approach.",
-        2: "a stronger hint — explain the key observation or insight needed, but still don't give the full algorithm.",
-        3: "a near-complete approach — explain the algorithm step-by-step clearly, but still do NOT provide the final code.",
+        1: (
+            "Hint 1/5 (Conceptual Nudge): Just point to the general data structure or pattern to consider "
+            "(e.g., Stack, Two Pointers, Sliding Window, DP). Do NOT reveal the algorithm or approach."
+        ),
+        2: (
+            "Hint 2/5 (Key Observation): Reveal the underlying mathematical or structural invariant in the problem. "
+            "What property must hold true for valid elements? Still do not provide the full algorithm."
+        ),
+        3: (
+            "Hint 3/5 (Overcoming Brute Force): Explain what redundant work a naive approach does and how "
+            "to prune or avoid checking unnecessary states."
+        ),
+        4: (
+            "Hint 4/5 (Algorithmic Framework): Outline the state variables, pointers, or data structures needed "
+            "and what each stores during traversal. No code."
+        ),
+        5: (
+            "Hint 5/5 (Near-Solution Logic): Walk through the step-by-step decision rules and edge case handling "
+            "in plain language. Tell the student that if they are still stuck after this, they can click 'Approach'."
+        ),
     }
     hint_desc = hint_descriptions.get(hint_level, hint_descriptions[1])
 
     user_content = ""
     if rag_context:
-        user_content += (
-            "## Relevant Knowledge Base Context\n\n"
-            f"{rag_context}\n\n---\n\n"
-        )
+        user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
     user_content += (
         f"## Student Request\n\n"
-        f"The student is stuck on the LeetCode problem: **{problem_title}**.\n"
-        f"They requested Hint Level {hint_level}. Provide {hint_desc}"
+        f"The student is working on: **{problem_title}**.\n"
+        f"They requested **Hint Level {hint_level} of 5**.\n\n"
+        f"Instructions: Provide {hint_desc}\n"
+        f"Do NOT provide the final code solution."
     )
 
     messages = [
@@ -167,38 +186,46 @@ def get_hint_chain_response(
 
 def get_approach_response(problem_title: str, rag_context: str = "") -> str:
     """
-    Explains the optimal algorithmic approach and intuition without providing code.
+    Explains the optimal algorithmic approach, immediate next step, and next question suggestion.
     """
+    approach_system = (
+        "You are JARVIS. The student has explored the progressive hints and now needs the "
+        "complete algorithmic approach. Explain the intuition and algorithm clearly in plain English (no code). "
+        "Always conclude with their immediate next step and recommended next problem link [Problem Title](/problem/:id)."
+    )
     user_content = ""
     if rag_context:
         user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
     user_content += (
         f"## Student Request\n\n"
-        f"Explain the recommended approach and algorithmic intuition for **{problem_title}**.\n"
+        f"Explain the recommended approach and algorithmic intuition for **{problem_title}**.\n\n"
         f"Structure your response with:\n"
-        f"1. 🧠 Core Problem Intuition\n"
-        f"2. 🔑 Key Observations\n"
-        f"3. ⚡ Step-by-Step Algorithm Walkthrough (plain language, NO final code)\n"
-        f"4. 📊 Brief Complexity summary\n"
-        f"Do NOT provide full implementation code."
+        f"1. 🧠 **Core Problem Intuition**\n"
+        f"2. 🔑 **Key Observations**\n"
+        f"3. ⚡ **Step-by-Step Algorithm Walkthrough** (plain language, NO final code)\n"
+        f"4. 📊 **Complexity Summary** (Time & Space)\n"
+        f"5. 🎯 **Your Immediate Next Step**: What the student should implement right now\n"
+        f"6. 🚀 **Recommended Next Question**: Pick the best next question from our 60 problems catalog "
+        f"(give problem title & link like `[Problem Title](/problem/:id)`)\n"
+        f"7. 🧭 **Recommended Tab**: Suggest a relevant tab like `[Topic-Wise Mistakes](/topic-wise-mistakes)` or `[1v1 Gaming Room](/gaming-room)`"
     )
-    return _chat([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}])
+    return _chat([{"role": "system", "content": approach_system}, {"role": "user", "content": user_content}])
 
 
 def get_complexity_response(problem_title: str, rag_context: str = "") -> str:
     """
-    Provides an in-depth analysis of Time and Space complexity.
+    Provides Big-O complexity breakdown.
     """
     user_content = ""
     if rag_context:
         user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
     user_content += (
         f"## Student Request\n\n"
-        f"Provide a thorough Big-O Complexity Analysis for **{problem_title}**.\n"
+        f"Provide a Big-O Complexity Analysis for **{problem_title}**.\n"
         f"Include:\n"
-        f"1. ⏱️ **Time Complexity**: Optimal vs Brute Force with mathematical justification\n"
+        f"1. ⏱️ **Time Complexity**: Optimal vs Brute Force with brief justification\n"
         f"2. 💾 **Space Complexity**: Auxiliary data structures and stack frame overhead\n"
-        f"3. 🎯 **Trade-offs**: Explain if there is any time-space trade-off available"
+        f"3. 🎯 **Trade-offs**: Time-space trade-offs if applicable"
     )
     return _chat([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}])
 
@@ -214,27 +241,36 @@ def get_mistakes_response(problem_title: str, rag_context: str = "") -> str:
         f"## Student Request\n\n"
         f"What are the most common mistakes, edge cases, and pitfalls students encounter when solving **{problem_title}**?\n"
         f"List:\n"
-        f"1. ⚠️ Top 3-4 Common Implementation Mistakes\n"
-        f"2. 🧪 Tricky Edge Cases to test (e.g. empty inputs, single element, duplicates, negative numbers)\n"
-        f"3. 🛡️ How to guard against these bugs in an interview setting"
+        f"1. ⚠️ Top 3 Common Implementation Pitfalls\n"
+        f"2. 🧪 Tricky Edge Cases to test\n"
+        f"3. 🛡️ Guardrail checks to write before coding"
     )
     return _chat([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}])
 
 
 def get_code_solution_response(problem_title: str, language: str = "Java", rag_context: str = "") -> str:
     """
-    Provides clean, production-grade, well-commented solution code.
+    Provides clean solution code, immediate next step, and next question recommendation.
     """
+    code_system = (
+        "You are JARVIS. The student has already completed all 5 progressive hints and reviewed "
+        "the algorithmic approach. Now provide the complete, optimal, beautifully commented solution code "
+        "in the requested language. You MUST provide the actual implementation code, explain the critical lines, "
+        "specify their immediate next step in the code editor, recommend their NEXT problem with a Markdown link "
+        "like [Problem Title](/problem/:id) from the catalog, and suggest a platform tab to explore."
+    )
     user_content = ""
     if rag_context:
         user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
     user_content += (
         f"## Student Request\n\n"
-        f"Provide the complete, optimal solution code for **{problem_title}** in **{language}**.\n"
+        f"Provide the complete, optimal solution code for **{problem_title}** in **{language}**.\n\n"
         f"Include:\n"
-        f"1. 💻 Clean, commented code using standard competitive programming conventions\n"
-        f"2. 📝 Line-by-line explanation of critical lines\n"
-        f"3. 📊 Final Time and Space Complexity"
+        f"1. 💻 **Clean Solution Code** with clear comments\n"
+        f"2. 📝 **Key Implementation Notes** (2-3 bullet points)\n"
+        f"3. 🎯 **Your Immediate Next Step**: What to do in the editor right now (type it, test with custom input)\n"
+        f"4. 🚀 **Recommended Next Question**: Suggest the best related problem from our 60 problem catalog "
+        f"(with link `[Problem Title](/problem/:id)`)\n"
+        f"5. 🧭 **Explore Tabs**: Suggest an applicable tab like `[Topic-Wise Mistakes](/topic-wise-mistakes)` or `[1v1 Gaming Room](/gaming-room)`"
     )
-    return _chat([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}])
-
+    return _chat([{"role": "system", "content": code_system}, {"role": "user", "content": user_content}])

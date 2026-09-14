@@ -46,7 +46,7 @@ class AIResponse(BaseModel):
 async def ask_tutor(request: AskRequest):
     """
     Main chat endpoint. Retrieves relevant context from RAG and
-    generates a structured tutoring response via Gemini.
+    generates a structured tutoring response via Groq (LLaMA 3.3 70B).
     """
     try:
         # RAG: build the search query from problem title + message
@@ -90,12 +90,14 @@ async def ai_health():
     Returns status of the AI service and whether the RAG vector DB is loaded.
     """
     import os
-    api_key_set = bool(os.getenv("GEMINI_API_KEY"))
+    api_key_set = bool(os.getenv("GROQ_API_KEY"))
     rag_loaded = rag_service._collection_loaded
+    model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     return {
         "status": "ok",
-        "gemini_api_key_configured": api_key_set,
+        "groq_api_key_configured": api_key_set,
         "rag_knowledge_base_loaded": rag_loaded,
-        "model": "gemini-1.5-flash",
+        "model": model,
+        "provider": "Groq",
     }

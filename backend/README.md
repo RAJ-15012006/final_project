@@ -1,4 +1,4 @@
-# JARVIS AI Backend — FastAPI + Gemini + RAG
+# JARVIS AI Backend — FastAPI + Groq (LLaMA 3.3 70B) + RAG
 
 Python-based AI backend service for the **AI-Based Intelligent Learning Assistant for Competitive Programming** project.
 
@@ -20,7 +20,7 @@ RAG Service (ChromaDB)
    │  retrieves relevant
    │  problem context
    ▼
-LLM Service (Gemini 1.5 Flash)
+LLM Service (Groq — LLaMA 3.3 70B)
    │  generates structured
    │  tutor response
    ▼
@@ -32,9 +32,9 @@ Structured AI Tutor Answer
 ### AI Tutor
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/ai/ask` | Ask the tutor a question (uses RAG + Gemini) |
+| POST | `/api/ai/ask` | Ask the tutor a question (uses RAG + Groq LLM) |
 | POST | `/api/ai/hint` | Get a progressive hint (level 1/2/3) |
-| GET | `/api/ai/health` | Health check — API key and RAG status |
+| GET  | `/api/ai/health` | Health check — API key and RAG status |
 
 ### Gamification
 | Method | Endpoint | Description |
@@ -62,14 +62,14 @@ source venv/bin/activate    # Mac / Linux
 pip install -r requirements.txt
 ```
 
-### 3. Set your Gemini API key
+### 3. Set your Groq API key
 
 ```bash
 cp .env.example .env
-# Edit .env and set GEMINI_API_KEY=your_actual_key
+# Edit .env and set GROQ_API_KEY=your_actual_key
 ```
 
-Get your free API key from: https://aistudio.google.com/app/apikey
+Get your **free** Groq API key from: https://console.groq.com
 
 ### 4. Run the server
 
@@ -80,6 +80,16 @@ uvicorn main:app --reload --port 8000
 The server starts at **http://localhost:8000**
 
 **Interactive API docs:** http://localhost:8000/docs
+
+## Available Models (Groq)
+
+Set `GROQ_MODEL` in your `.env` to switch models:
+
+| Model | Speed | Quality | Best for |
+|-------|-------|---------|----------|
+| `llama-3.3-70b-versatile` | Fast | ⭐⭐⭐⭐⭐ | Default — best quality |
+| `llama3-8b-8192` | Fastest | ⭐⭐⭐ | Low-latency responses |
+| `mixtral-8x7b-32768` | Fast | ⭐⭐⭐⭐ | Long context |
 
 ## Key Files
 
@@ -92,7 +102,7 @@ backend/
 │   ├── ai_tutor.py            # /api/ai endpoints (ask, hint, health)
 │   └── gamification.py        # /api/gamification endpoints
 ├── services/
-│   ├── llm_service.py         # Gemini LLM integration + prompt engineering
+│   ├── llm_service.py         # Groq LLM integration + prompt engineering
 │   └── rag_service.py         # ChromaDB RAG pipeline + retrieval
 └── data/
     └── knowledge_base.json    # Curated LeetCode problem knowledge base
@@ -102,7 +112,7 @@ backend/
 
 The `knowledge_base.json` file contains structured knowledge for LeetCode problems. Each entry includes:
 - Problem understanding
-- Key observations  
+- Key observations
 - Brute force approach
 - Optimized approach
 - Time and space complexity
@@ -123,4 +133,6 @@ To add more problems, append entries to `knowledge_base.json` and restart the se
 
 ## Notes for Viva / Report
 
-> **Important:** We did NOT train the Gemini LLM. We integrated Google's Gemini 1.5 Flash model via API and customized its behavior using **prompt engineering**. The RAG system retrieves domain-specific competitive-programming knowledge from a **vector database (ChromaDB)** before every LLM call, making responses more accurate and context-aware. This is the standard RAG (Retrieval-Augmented Generation) architecture.
+> **Important:** We did NOT train the LLaMA model. We integrated the **LLaMA 3.3 70B** open-source model via the **Groq API** and customized its behaviour using **prompt engineering**. The RAG system retrieves domain-specific competitive-programming knowledge from a **vector database (ChromaDB)** before every LLM call, making responses more accurate and context-aware. This is the standard RAG (Retrieval-Augmented Generation) architecture.
+>
+> Groq provides ultra-fast inference for open-source LLMs. Our system = Groq (LLM provider) + ChromaDB (vector DB) + SentenceTransformers (embeddings) + FastAPI (service layer).

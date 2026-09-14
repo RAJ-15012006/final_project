@@ -42,7 +42,7 @@ app = FastAPI(
     title="JARVIS – AI Learning Assistant API",
     description=(
         "Backend API for the AI-Based Intelligent Learning Assistant for "
-        "Competitive Programming. Provides AI tutoring via Gemini LLM + RAG, "
+        "Competitive Programming. Provides AI tutoring via Groq (LLaMA 3.3 70B) + RAG, "
         "gamification (leaderboard, streaks, scoring), and competition features."
     ),
     version="1.0.0",

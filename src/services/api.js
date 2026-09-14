@@ -1,7 +1,7 @@
 /**
  * api.js
  * -------
- * Centralized API client for the JARVIS backend.
+ * Centralized API client for the JARVIS backend (FastAPI + Groq + RAG).
  * All frontend components should use these functions
  * instead of calling fetch() directly.
  */

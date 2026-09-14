@@ -1,23 +1,28 @@
 """
 llm_service.py
 --------------
-Handles all communication with the Google Gemini LLM.
+Handles all communication with the Groq LLM API.
 Uses prompt engineering to constrain the AI to act as a
 structured competitive-programming tutor.
+
+Groq provides ultra-fast inference for open-source models like
+LLaMA 3.3 70B, which is used here as the AI backbone.
 """
 
 import os
-import google.generativeai as genai
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── Configure Gemini API ──────────────────────────────────────────────────────
-API_KEY = os.getenv("GEMINI_API_KEY")
-if API_KEY:
-    genai.configure(api_key=API_KEY)
+# ── Groq Client ───────────────────────────────────────────────────────────────
+_client = Groq(api_key=os.getenv("GROQ_API_KEY", ""))
 
-# ── Master System Prompt (Prompt Engineering) ────────────────────────────────
+# Default model — LLaMA 3.3 70B is Groq's most capable model.
+# Alternatives: "llama3-8b-8192" (faster), "mixtral-8x7b-32768"
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+
+# ── Master System Prompt (Prompt Engineering) ─────────────────────────────────
 SYSTEM_PROMPT = """You are JARVIS — an AI tutor specialized exclusively in competitive programming and LeetCode problem-solving.
 
 Your PRIMARY goal is to TEACH, not to immediately reveal answers.
@@ -25,7 +30,7 @@ Your PRIMARY goal is to TEACH, not to immediately reveal answers.
 ## Behaviour Rules
 1. NEVER dump the complete solution immediately unless the student explicitly asks for "the code" or "the full solution".
 2. Always begin by confirming your understanding of what the student is asking.
-3. Guide students using the Socratic method: ask leading questions when appropriate.
+3. Guide students using the Socratic method — ask leading questions when appropriate.
 4. Structure every substantive response using these sections (include only relevant ones):
 
    ### 🧠 Problem Understanding
@@ -35,7 +40,7 @@ Your PRIMARY goal is to TEACH, not to immediately reveal answers.
    Point out the critical insight that unlocks the solution.
 
    ### 💡 Hint
-   Provide a gentle nudge (increase detail if student asks for another hint).
+   Provide a gentle nudge (increase detail if the student asks for another hint).
 
    ### ⚡ Approach
    Explain the algorithm step-by-step (no code yet unless requested).
@@ -55,42 +60,52 @@ Your PRIMARY goal is to TEACH, not to immediately reveal answers.
 """
 
 
+def _chat(messages: list[dict]) -> str:
+    """
+    Internal helper — sends a list of messages to Groq and returns the reply.
+    """
+    try:
+        response = _client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2048,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"[Groq Error] {e}")
+        return (
+            "I'm having trouble connecting to the AI backend right now. "
+            "Please check that your **GROQ_API_KEY** is set correctly in `backend/.env` and try again.\n\n"
+            "Get a free API key at: https://console.groq.com"
+        )
+
+
 def get_tutor_response(user_message: str, rag_context: str = "") -> str:
     """
-    Generates a tutoring response from Gemini.
+    Generates a tutoring response from the Groq LLM.
 
     Args:
         user_message: The student's question or message.
         rag_context: Optional context retrieved from the RAG vector database.
 
     Returns:
-        A formatted string response from the AI tutor.
+        A formatted Markdown string response from the AI tutor.
     """
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT
-    )
-
-    # Build the full prompt
-    prompt_parts = []
-
+    # Build the user content — prepend RAG context if available
+    user_content = ""
     if rag_context:
-        prompt_parts.append(
-            f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n"
+        user_content += (
+            "## Relevant Knowledge Base Context\n\n"
+            f"{rag_context}\n\n---\n\n"
         )
+    user_content += f"## Student Question\n\n{user_message}"
 
-    prompt_parts.append(f"## Student Question\n\n{user_message}")
-    final_prompt = "\n".join(prompt_parts)
-
-    try:
-        response = model.generate_content(final_prompt)
-        return response.text
-    except Exception as e:
-        print(f"[LLM Error] {e}")
-        return (
-            "I'm having trouble connecting to the AI backend right now. "
-            "Please check that your GEMINI_API_KEY is set correctly and try again."
-        )
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user",   "content": user_content},
+    ]
+    return _chat(messages)
 
 
 def get_hint_chain_response(
@@ -110,31 +125,26 @@ def get_hint_chain_response(
         A formatted hint string.
     """
     hint_descriptions = {
-        1: "a very gentle nudge — just point to what data structure or pattern to think about",
-        2: "a stronger hint — explain the key observation or insight needed",
-        3: "a near-complete approach — explain the algorithm step-by-step without code",
+        1: "a very gentle nudge — just point to what data structure or algorithmic pattern to think about. Do NOT reveal the approach.",
+        2: "a stronger hint — explain the key observation or insight needed, but still don't give the full algorithm.",
+        3: "a near-complete approach — explain the algorithm step-by-step clearly, but still do NOT provide the final code.",
     }
     hint_desc = hint_descriptions.get(hint_level, hint_descriptions[1])
 
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT
-    )
-
-    prompt = ""
+    user_content = ""
     if rag_context:
-        prompt += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n"
-
-    prompt += (
+        user_content += (
+            "## Relevant Knowledge Base Context\n\n"
+            f"{rag_context}\n\n---\n\n"
+        )
+    user_content += (
         f"## Student Request\n\n"
         f"The student is stuck on the LeetCode problem: **{problem_title}**.\n"
-        f"They have asked for Hint Level {hint_level}. "
-        f"Provide {hint_desc}. Do NOT provide the full solution."
+        f"They requested Hint Level {hint_level}. Provide {hint_desc}"
     )
 
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        print(f"[LLM Hint Error] {e}")
-        return "Sorry, I couldn't generate a hint right now. Please try again."
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user",   "content": user_content},
+    ]
+    return _chat(messages)

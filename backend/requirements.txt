@@ -3,9 +3,9 @@ uvicorn
 motor
 pydantic
 pydantic-settings
-google-generativeai
+groq
 langchain
-langchain-google-genai
+langchain-groq
 chromadb
 sentence-transformers
 python-dotenv

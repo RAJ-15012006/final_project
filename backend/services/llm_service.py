@@ -18,9 +18,8 @@ load_dotenv()
 # ── Groq Client ───────────────────────────────────────────────────────────────
 _client = Groq(api_key=os.getenv("GROQ_API_KEY", ""))
 
-# Default model — LLaMA 3.3 70B is Groq's most capable model.
-# Alternatives: "llama3-8b-8192" (faster), "mixtral-8x7b-32768"
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+# Default model supported on this account
+GROQ_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
 
 # ── Master System Prompt (Prompt Engineering) ─────────────────────────────────
 SYSTEM_PROMPT = """You are JARVIS — an AI tutor specialized exclusively in competitive programming and LeetCode problem-solving.

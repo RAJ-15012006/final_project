@@ -49,6 +49,79 @@ export async function getHint(problemTitle, hintLevel = 1) {
 }
 
 /**
+ * Explain the algorithmic approach and intuition.
+ * @param {string} problemTitle - The LeetCode problem title
+ * @returns {Promise<{response: string}>}
+ */
+export async function getApproach(problemTitle) {
+  const res = await fetch(`${BASE_URL}/api/ai/approach`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ problem_title: problemTitle }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API error ${res.status}`);
+  }
+  return res.json();
+}
+
+/**
+ * Get Big-O complexity breakdown.
+ * @param {string} problemTitle - The LeetCode problem title
+ * @returns {Promise<{response: string}>}
+ */
+export async function getComplexity(problemTitle) {
+  const res = await fetch(`${BASE_URL}/api/ai/complexity`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ problem_title: problemTitle }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API error ${res.status}`);
+  }
+  return res.json();
+}
+
+/**
+ * Get common mistakes and tricky edge cases.
+ * @param {string} problemTitle - The LeetCode problem title
+ * @returns {Promise<{response: string}>}
+ */
+export async function getMistakes(problemTitle) {
+  const res = await fetch(`${BASE_URL}/api/ai/mistakes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ problem_title: problemTitle }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API error ${res.status}`);
+  }
+  return res.json();
+}
+
+/**
+ * Get complete solution code.
+ * @param {string} problemTitle - The LeetCode problem title
+ * @param {string} language - Programming language (Java, Python, C++)
+ * @returns {Promise<{response: string}>}
+ */
+export async function getCodeSolution(problemTitle, language = "Java") {
+  const res = await fetch(`${BASE_URL}/api/ai/code`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ problem_title: problemTitle, language }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API error ${res.status}`);
+  }
+  return res.json();
+}
+
+/**
  * Check AI backend health status.
  */
 export async function checkAIHealth() {

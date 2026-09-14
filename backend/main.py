@@ -72,7 +72,7 @@ app.include_router(ai_tutor.router)
 app.include_router(gamification.router)
 
 
-# ── Root ──────────────────────────────────────────────────────────────────────
+# ── Root & Utility Endpoints ──────────────────────────────────────────────────
 @app.get("/", tags=["Root"])
 async def root():
     return {
@@ -81,3 +81,16 @@ async def root():
         "docs": "/docs",
         "version": "1.0.0",
     }
+
+@app.post("/api/listener-heartbeat", tags=["Voice"])
+async def listener_heartbeat():
+    return {"status": "ok"}
+
+@app.get("/api/speaking-status", tags=["Voice"])
+async def speaking_status():
+    return {"speaking": false}
+
+@app.post("/api/voice-command", tags=["Voice"])
+async def voice_command():
+    return {"status": "ok", "message": "Voice command received"}
+

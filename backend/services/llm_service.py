@@ -59,25 +59,41 @@ Your PRIMARY goal is to TEACH, not to immediately reveal answers.
 """
 
 
-def _chat(messages: list[dict]) -> str:
+def _chat(messages: list[dict], max_tokens: int = 750) -> str:
     """
-    Internal helper — sends a list of messages to Groq and returns the reply.
+    Sends messages to Groq with automatic fallback across candidate models
+    and resilient rate-limit handling.
     """
-    try:
-        response = _client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=messages,
-            temperature=0.7,
-            max_tokens=2048,
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"[Groq Error] {e}")
-        return (
-            "I'm having trouble connecting to the AI backend right now. "
-            "Please check that your **GROQ_API_KEY** is set correctly in `backend/.env` and try again.\n\n"
-            "Get a free API key at: https://console.groq.com"
-        )
+    candidate_models = [
+        os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+        "qwen/qwen3.8-27b",
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-120b"
+    ]
+    # Remove duplicates while preserving order
+    seen = set()
+    models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
+
+    last_error = None
+    for model_name in models_to_try:
+        try:
+            response = _client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=max_tokens,
+            )
+            if response.choices and response.choices[0].message.content:
+                return response.choices[0].message.content
+        except Exception as e:
+            last_error = e
+            print(f"[Groq Error on {model_name}] {e}")
+            continue
+
+    return (
+        f"⚠️ **AI Service Notice:** The model reached its free-tier rate limit ({last_error}). "
+        "Please wait a few seconds and try again, or check your API key in `backend/.env`."
+    )
 
 
 def get_tutor_response(user_message: str, rag_context: str = "") -> str:
@@ -147,3 +163,78 @@ def get_hint_chain_response(
         {"role": "user",   "content": user_content},
     ]
     return _chat(messages)
+
+
+def get_approach_response(problem_title: str, rag_context: str = "") -> str:
+    """
+    Explains the optimal algorithmic approach and intuition without providing code.
+    """
+    user_content = ""
+    if rag_context:
+        user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
+    user_content += (
+        f"## Student Request\n\n"
+        f"Explain the recommended approach and algorithmic intuition for **{problem_title}**.\n"
+        f"Structure your response with:\n"
+        f"1. 🧠 Core Problem Intuition\n"
+        f"2. 🔑 Key Observations\n"
+        f"3. ⚡ Step-by-Step Algorithm Walkthrough (plain language, NO final code)\n"
+        f"4. 📊 Brief Complexity summary\n"
+        f"Do NOT provide full implementation code."
+    )
+    return _chat([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}])
+
+
+def get_complexity_response(problem_title: str, rag_context: str = "") -> str:
+    """
+    Provides an in-depth analysis of Time and Space complexity.
+    """
+    user_content = ""
+    if rag_context:
+        user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
+    user_content += (
+        f"## Student Request\n\n"
+        f"Provide a thorough Big-O Complexity Analysis for **{problem_title}**.\n"
+        f"Include:\n"
+        f"1. ⏱️ **Time Complexity**: Optimal vs Brute Force with mathematical justification\n"
+        f"2. 💾 **Space Complexity**: Auxiliary data structures and stack frame overhead\n"
+        f"3. 🎯 **Trade-offs**: Explain if there is any time-space trade-off available"
+    )
+    return _chat([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}])
+
+
+def get_mistakes_response(problem_title: str, rag_context: str = "") -> str:
+    """
+    Highlights common pitfalls, traps, and tricky edge cases for a problem.
+    """
+    user_content = ""
+    if rag_context:
+        user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
+    user_content += (
+        f"## Student Request\n\n"
+        f"What are the most common mistakes, edge cases, and pitfalls students encounter when solving **{problem_title}**?\n"
+        f"List:\n"
+        f"1. ⚠️ Top 3-4 Common Implementation Mistakes\n"
+        f"2. 🧪 Tricky Edge Cases to test (e.g. empty inputs, single element, duplicates, negative numbers)\n"
+        f"3. 🛡️ How to guard against these bugs in an interview setting"
+    )
+    return _chat([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}])
+
+
+def get_code_solution_response(problem_title: str, language: str = "Java", rag_context: str = "") -> str:
+    """
+    Provides clean, production-grade, well-commented solution code.
+    """
+    user_content = ""
+    if rag_context:
+        user_content += f"## Relevant Knowledge Base Context\n\n{rag_context}\n\n---\n\n"
+    user_content += (
+        f"## Student Request\n\n"
+        f"Provide the complete, optimal solution code for **{problem_title}** in **{language}**.\n"
+        f"Include:\n"
+        f"1. 💻 Clean, commented code using standard competitive programming conventions\n"
+        f"2. 📝 Line-by-line explanation of critical lines\n"
+        f"3. 📊 Final Time and Space Complexity"
+    )
+    return _chat([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_content}])
+

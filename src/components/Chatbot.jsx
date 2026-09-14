@@ -1,90 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, Avatar, Typography, Tooltip, Input, Button, List, Space, Badge, Row, Col } from 'antd';
-import { RobotOutlined, UserOutlined, SettingOutlined, LikeOutlined, DislikeOutlined, CopyOutlined, SendOutlined } from '@ant-design/icons';
+import {
+  Card, Avatar, Typography, Tooltip, Input, Button,
+  List, Space, Badge, Row, Col, Tag, message as antMessage
+} from 'antd';
+import {
+  UserOutlined, SettingOutlined, LikeOutlined, DislikeOutlined,
+  CopyOutlined, SendOutlined, BulbOutlined, ReloadOutlined
+} from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 import { useTheme } from '../context/ThemeContext';
-
 import Logo from './Logo';
+import { askTutor, getHint } from '../services/api';
 
 const { Text } = Typography;
 
-export default function Chatbot({ problemData, userName, isFullPage = false }) {
-  const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const { theme } = useTheme();
-  const messagesEndRef = useRef(null);
+// ── Markdown Renderer ────────────────────────────────────────────────────────
 
-  // Initialize messages when problem changes
-  useEffect(() => {
-    if (problemData) {
-      setMessages([
-        {
-          id: Date.now(),
-          sender: 'bot',
-          text: `Welcome, ${userName}! Ready to work with your **JARVIS** assistant? I see we are working on **${problemData.title}**. What part of the problem are you analyzing first?`
-        }
-      ]);
-    }
-  }, [problemData, userName]);
-
-  // Auto-scroll to bottom of chat
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
-
+function MarkdownRenderer({ content, theme }) {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
+    antMessage.success('Copied to clipboard!');
   };
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
-
-    const newUserMsg = { id: Date.now(), sender: 'user', text: inputValue };
-    setMessages(prev => [...prev, newUserMsg]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simulate logic for context-aware responses
-    setTimeout(() => {
-      setIsTyping(false);
-
-      let response = "";
-      const lowerInput = inputValue.toLowerCase();
-      const topics = problemData?.topics || [];
-
-      if (lowerInput.includes('hint')) {
-        if (topics.includes('Two Pointers')) {
-          response = `Since this problem involves **Two Pointers**, try initializing one at the start and one at the end of the array. How do they move relative to each other based on the target?`;
-        } else if (topics.includes('Hash Table')) {
-          response = `A **Hash Table** could help you store values we've already seen to achieve O(n) time complexity. What would be the key and value in your map?`;
-        } else if (topics.includes('Stack')) {
-          response = `Think about using a **Stack** to keep track of open brackets. What should you do when you encounter a closing bracket?`;
-        } else {
-          response = `For **${problemData.title}**, focus on the core requirement. Have you considered the edge cases like empty inputs or single elements?`;
-        }
-      } else if (lowerInput.includes('complexity')) {
-        response = `Most optimal solutions for this type of problem aim for **O(n)** or **O(n log n)**. Can you think of a way to avoid a nested loop?`;
-      } else {
-        response = `That's an interesting approach! In the context of **${problemData.title}**, how does that handle the constraints mentioned in the description? \n\nWould you like a specific hint on the algorithm?`;
-      }
-
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          sender: 'bot',
-          text: response
-        }
-      ]);
-    }, 1200);
-  };
-
-  const MarkdownRenderer = ({ content }) => (
+  return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
@@ -110,13 +52,124 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
             <code style={{ background: theme === 'dark' ? '#1d39c4' : '#e6f4ff', color: theme === 'dark' ? '#adc6ff' : '#0958d9', padding: '2px 4px', borderRadius: '4px', fontFamily: 'monospace' }} {...props}>
               {children}
             </code>
-          )
+          );
         }
       }}
     >
       {content}
     </ReactMarkdown>
   );
+}
+
+// ── Initial welcome message ──────────────────────────────────────────────────
+
+function buildWelcomeMessage(userName, problemData) {
+  if (problemData) {
+    return `Welcome, **${userName || 'Student'}**! I'm **JARVIS**, your AI programming tutor. 🤖\n\nI see we're working on **${problemData.title}** (${problemData.difficulty || 'N/A'}).\n\nI'm here to help you *think through* the problem — not just give you the answer. Try asking me:\n- *"Give me a hint"*\n- *"How do I approach this?"*\n- *"What data structure should I use?"*\n\nWhat are you stuck on?`;
+  }
+  return `Welcome, **${userName || 'Student'}**! I'm **JARVIS**, your AI programming tutor. 🤖\n\nAsk me about any LeetCode or competitive programming problem. I'll guide you through the thinking process step by step!`;
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
+
+export default function Chatbot({ problemData, userName, isFullPage = false }) {
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [hintLevel, setHintLevel] = useState(1);
+  const { theme } = useTheme();
+  const messagesEndRef = useRef(null);
+
+  // Initialize messages when problem changes
+  useEffect(() => {
+    setMessages([{
+      id: Date.now(),
+      sender: 'bot',
+      text: buildWelcomeMessage(userName, problemData),
+    }]);
+    setHintLevel(1);
+  }, [problemData, userName]);
+
+  // Auto-scroll to latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  const addBotMessage = (text) => {
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'bot', text }]);
+  };
+
+  const addErrorMessage = (errText) => {
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      sender: 'bot',
+      text: `⚠️ **Error:** ${errText}\n\nMake sure the backend is running: \`uvicorn main:app --reload\``,
+    }]);
+  };
+
+  // ── Send general message ────────────────────────────────────────────────────
+  const handleSend = async () => {
+    const msg = inputValue.trim();
+    if (!msg) return;
+
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: msg }]);
+    setInputValue('');
+    setIsTyping(true);
+
+    try {
+      const data = await askTutor(msg, problemData?.title || null);
+      addBotMessage(data.response || 'No response received.');
+    } catch (err) {
+      console.error('[Chatbot] askTutor error:', err);
+      addErrorMessage(err.message || 'Could not connect to AI backend.');
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  // ── Progressive hint ────────────────────────────────────────────────────────
+  const handleHint = async () => {
+    if (!problemData?.title) {
+      addBotMessage("Please open a specific problem page to get hints. I don't know which problem to give hints for!");
+      return;
+    }
+
+    const userMsg = `Give me Hint Level ${hintLevel} for ${problemData.title}`;
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: userMsg }]);
+    setIsTyping(true);
+
+    try {
+      const data = await getHint(problemData.title, hintLevel);
+      addBotMessage(data.response || 'Could not generate hint.');
+      // Advance hint level for next click (max 3)
+      setHintLevel(prev => Math.min(prev + 1, 3));
+    } catch (err) {
+      console.error('[Chatbot] getHint error:', err);
+      addErrorMessage(err.message || 'Could not generate hint.');
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  // ── Reset chat ───────────────────────────────────────────────────────────────
+  const handleReset = () => {
+    setMessages([{
+      id: Date.now(),
+      sender: 'bot',
+      text: buildWelcomeMessage(userName, problemData),
+    }]);
+    setHintLevel(1);
+  };
+
+  // ── Copy message ─────────────────────────────────────────────────────────────
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    antMessage.success('Copied!');
+  };
+
+  // ── Hint level tag colors ────────────────────────────────────────────────────
+  const hintLevelColor = ['green', 'orange', 'red'];
+  const hintLevelLabel = ['Hint 1', 'Hint 2', 'Hint 3'];
 
   return (
     <Card
@@ -128,25 +181,32 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
         flexDirection: 'column',
         overflow: 'hidden',
         height: '100%',
-        border: theme === 'dark' ? '1px solid #333' : '1px solid #f0f0f0'
+        border: theme === 'dark' ? '1px solid #333' : '1px solid #f0f0f0',
       }}
       bodyStyle={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: 0 }}
     >
-      {/* Chat Header */}
-      <div style={{ padding: '12px 16px', background: theme === 'dark' ? '#1a1a1a' : '#fafafa', borderBottom: `1px solid ${theme === 'dark' ? '#333' : '#f0f0f0'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div style={{
+        padding: '12px 16px',
+        background: theme === 'dark' ? '#1a1a1a' : '#fafafa',
+        borderBottom: `1px solid ${theme === 'dark' ? '#333' : '#f0f0f0'}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
         <Space>
           <Logo size={24} />
           <div>
-            <Text strong style={{ display: 'block', lineHeight: '1.2', fontSize: '13px' }}>JARVIS</Text>
-            <Badge status="success" text={<span style={{ fontSize: '11px' }}>Online</span>} />
+            <Text strong style={{ display: 'block', lineHeight: '1.2', fontSize: '13px' }}>JARVIS AI Tutor</Text>
+            <Badge status="success" text={<span style={{ fontSize: '11px' }}>Online · RAG Powered</span>} />
           </div>
         </Space>
         <Tooltip title="Reset chat">
-          <Button type="text" icon={<SettingOutlined />} size="small" />
+          <Button type="text" icon={<ReloadOutlined />} size="small" onClick={handleReset} />
         </Tooltip>
       </div>
 
-      {/* Chat Messages Area */}
+      {/* ── Messages ────────────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', background: theme === 'dark' ? '#141414' : '#fff' }}>
         <List
           itemLayout="horizontal"
@@ -163,32 +223,32 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
                   }}
                   size="small"
                 />
                 <div>
                   <div style={{
                     background: msg.sender === 'user' ? '#1677ff' : (theme === 'dark' ? '#1f1f1f' : '#f0f0f0'),
-                    color: msg.sender === 'user' ? '#fff' : (theme === 'dark' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.88)'),
+                    color: msg.sender === 'user' ? '#fff' : (theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.88)'),
                     padding: '8px 12px',
                     borderRadius: '8px',
                     borderTopRightRadius: msg.sender === 'user' ? '0' : '8px',
                     borderTopLeftRadius: msg.sender === 'bot' ? '0' : '8px',
                     border: msg.sender === 'bot' ? (theme === 'dark' ? '1px solid #333' : '1px solid #e8e8e8') : 'none',
-                    fontSize: '14px'
+                    fontSize: '14px',
                   }}>
                     {msg.sender === 'user' ? (
                       <Text style={{ color: '#fff' }}>{msg.text}</Text>
                     ) : (
-                      <MarkdownRenderer content={msg.text} />
+                      <MarkdownRenderer content={msg.text} theme={theme} />
                     )}
                   </div>
                   {msg.sender === 'bot' && (
                     <div style={{ marginTop: '4px', marginLeft: '4px' }}>
                       <Space size="middle">
-                        <Tooltip title="Good response"><LikeOutlined style={{ color: '#8c8c8c', cursor: 'pointer' }} /></Tooltip>
-                        <Tooltip title="Poor response"><DislikeOutlined style={{ color: '#8c8c8c', cursor: 'pointer' }} /></Tooltip>
+                        <Tooltip title="Helpful"><LikeOutlined style={{ color: '#8c8c8c', cursor: 'pointer' }} /></Tooltip>
+                        <Tooltip title="Not helpful"><DislikeOutlined style={{ color: '#8c8c8c', cursor: 'pointer' }} /></Tooltip>
                         <Tooltip title="Copy"><CopyOutlined style={{ color: '#8c8c8c', cursor: 'pointer' }} onClick={() => copyToClipboard(msg.text)} /></Tooltip>
                       </Space>
                     </div>
@@ -199,25 +259,47 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
           )}
         />
 
-        {/* Typing Indicator */}
+        {/* Typing indicator */}
         {isTyping && (
           <div style={{ display: 'flex', alignItems: 'flex-start', marginTop: '12px' }}>
             <Logo size={24} style={{ marginRight: '8px' }} />
             <div style={{ background: theme === 'dark' ? '#1f1f1f' : '#f0f0f0', padding: '8px 12px', borderRadius: '8px', borderTopLeftRadius: '0', border: theme === 'dark' ? '1px solid #333' : '1px solid #e8e8e8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div className="typing-dot" style={{ width: '4px', height: '4px', background: '#bfbfbf', borderRadius: '50%', animation: 'typing 1.4s infinite ease-in-out both' }}></div>
-              <div className="typing-dot" style={{ width: '4px', height: '4px', background: '#bfbfbf', borderRadius: '50%', animation: 'typing 1.4s infinite ease-in-out both', animationDelay: '0.2s' }}></div>
-              <div className="typing-dot" style={{ width: '4px', height: '4px', background: '#bfbfbf', borderRadius: '50%', animation: 'typing 1.4s infinite ease-in-out both', animationDelay: '0.4s' }}></div>
+              <div className="typing-dot" style={{ width: '4px', height: '4px', background: '#bfbfbf', borderRadius: '50%', animation: 'typing 1.4s infinite ease-in-out both' }} />
+              <div className="typing-dot" style={{ width: '4px', height: '4px', background: '#bfbfbf', borderRadius: '50%', animation: 'typing 1.4s infinite ease-in-out both', animationDelay: '0.2s' }} />
+              <div className="typing-dot" style={{ width: '4px', height: '4px', background: '#bfbfbf', borderRadius: '50%', animation: 'typing 1.4s infinite ease-in-out both', animationDelay: '0.4s' }} />
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat Input Box */}
+      {/* ── Input Area ──────────────────────────────────────────────────────── */}
       <div style={{ padding: '12px', borderTop: `1px solid ${theme === 'dark' ? '#333' : '#f0f0f0'}`, background: theme === 'dark' ? '#1a1a1a' : '#fff', flexShrink: 0 }}>
+        {/* Quick action: Hint button */}
+        {problemData && (
+          <div style={{ marginBottom: '8px' }}>
+            <Tooltip title={`Get a progressive hint (Level ${hintLevel}/3)`}>
+              <Button
+                size="small"
+                icon={<BulbOutlined />}
+                onClick={handleHint}
+                disabled={isTyping}
+                style={{ marginRight: '8px' }}
+              >
+                <Tag color={hintLevelColor[hintLevel - 1]} style={{ margin: 0, fontSize: '11px' }}>
+                  {hintLevelLabel[hintLevel - 1]}
+                </Tag>
+              </Button>
+            </Tooltip>
+            <Text type="secondary" style={{ fontSize: '11px' }}>
+              Stuck? Click for a progressive hint →
+            </Text>
+          </div>
+        )}
+
         <Input.TextArea
           autoSize={{ minRows: 1, maxRows: 3 }}
-          placeholder="Type your message..."
+          placeholder="Ask JARVIS anything about this problem..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onPressEnter={(e) => {
@@ -226,6 +308,7 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
               handleSend();
             }
           }}
+          disabled={isTyping}
           style={{ borderRadius: '6px', marginBottom: '8px', background: theme === 'dark' ? '#0f0f0f' : '#fff' }}
         />
         <Row justify="space-between" align="middle">
@@ -233,12 +316,19 @@ export default function Chatbot({ problemData, userName, isFullPage = false }) {
             <Text type="secondary" style={{ fontSize: '11px' }}>Shift + Enter for new line</Text>
           </Col>
           <Col>
-            <Button type="primary" icon={<SendOutlined />} onClick={handleSend} disabled={!inputValue.trim()}>
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={handleSend}
+              disabled={!inputValue.trim() || isTyping}
+              loading={isTyping}
+            >
               Send
             </Button>
           </Col>
         </Row>
       </div>
+
       <style>{`
         @keyframes typing {
           0%, 80%, 100% { transform: scale(0); }

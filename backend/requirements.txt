@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+motor
+pydantic
+pydantic-settings
+google-generativeai
+langchain
+langchain-google-genai
+chromadb
+sentence-transformers
+python-dotenv
+certifi

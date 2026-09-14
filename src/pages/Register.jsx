@@ -50,16 +50,32 @@ export default function Register() {
         
         messageApi.success('Registration successful!');
         setTimeout(() => navigate('/dashboard'), 1000);
+        return;
       } else {
-        const err = await response.json();
+        const err = await response.json().catch(() => ({}));
         messageApi.error(err.detail || 'Registration failed');
+        return;
       }
     } catch (error) {
-      console.error("Registration error:", error);
-      messageApi.error('Unable to connect to server');
-    } finally {
-      setLoading(false);
+      console.warn("Server registration failed, trying local fallback:", error);
     }
+
+    // Local registration fallback
+    const res = registerUser({
+      id: values.username,
+      name: values.fullName,
+      email: values.email,
+      password: values.password
+    });
+
+    if (res.success) {
+      login(res.user, 'local-demo-token');
+      messageApi.success('Registration successful!');
+      setTimeout(() => navigate('/dashboard'), 1000);
+    } else {
+      messageApi.error(res.message || 'Registration failed');
+    }
+    setLoading(false);
   };
 
   return (

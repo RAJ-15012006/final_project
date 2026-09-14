@@ -35,16 +35,28 @@ export default function Login() {
         login(data.user, data.access_token);
         messageApi.success('Login successful!');
         navigate('/dashboard');
-      } else {
-        const err = await response.json();
+        return;
+      }
+      
+      const err = await response.json().catch(() => ({}));
+      if (response.status === 401) {
         messageApi.error(err.detail || 'Invalid username or password');
+        return;
       }
     } catch (error) {
-      console.error("Login error:", error);
-      messageApi.error('Unable to connect to server');
-    } finally {
-      setLoading(false);
+      console.warn("Server unavailable, trying local fallback:", error);
     }
+
+    // Local authentication fallback
+    const localUser = findUser(values.username, values.password);
+    if (localUser) {
+      login(localUser, 'local-demo-token');
+      messageApi.success('Login successful (offline mode)!');
+      navigate('/dashboard');
+    } else {
+      messageApi.error('Invalid username or password');
+    }
+    setLoading(false);
   };
 
   return (

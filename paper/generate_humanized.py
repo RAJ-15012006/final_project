@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+# -*- coding: utf-8 -*-
+html = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -882,4 +883,7 @@
 </div>
 
 </body>
-</html>
+</html>"""
+with open('paper/ieee_paper.html', 'w', encoding='utf-8') as f:
+    f.write(html)
+print('Updated paper/ieee_paper.html successfully, size:', len(html))

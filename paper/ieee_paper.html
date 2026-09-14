@@ -6,7 +6,7 @@
 <style>
   @page {
     size: letter;
-    margin: 0.54in 0.48in 0.54in 0.48in;
+    margin: 0.52in 0.46in 0.52in 0.46in;
   }
   * {
     box-sizing: border-box;
@@ -15,8 +15,8 @@
   }
   body {
     font-family: "Times New Roman", Times, "Nimbus Roman No9 L", serif;
-    font-size: 8.85pt;
-    line-height: 1.15;
+    font-size: 8.8pt;
+    line-height: 1.14;
     color: #000;
     background: #fff;
     text-align: justify;
@@ -60,17 +60,17 @@
   /* Two Column Container */
   .columns-container {
     column-count: 2;
-    column-gap: 0.22in;
+    column-gap: 0.20in;
     column-rule: none;
   }
 
   /* Headings */
   h2.section-title {
-    font-size: 9.3pt;
+    font-size: 9.2pt;
     font-weight: bold;
     text-align: center;
     text-transform: uppercase;
-    margin-top: 8px;
+    margin-top: 7px;
     margin-bottom: 3px;
     letter-spacing: 0.3px;
     break-after: avoid;
@@ -80,25 +80,25 @@
     margin-top: 0;
   }
   h3.subsection-title {
-    font-size: 8.85pt;
+    font-size: 8.8pt;
     font-weight: bold;
     font-style: italic;
-    margin-top: 5px;
+    margin-top: 4.5px;
     margin-bottom: 2px;
     break-after: avoid;
   }
   h4.subsubsection-title {
-    font-size: 8.6pt;
+    font-size: 8.5pt;
     font-style: italic;
     font-weight: 600;
-    margin-top: 3.5px;
+    margin-top: 3px;
     margin-bottom: 1.5px;
     break-after: avoid;
   }
 
   p {
     text-indent: 1.15em;
-    margin-bottom: 3.5px;
+    margin-bottom: 3px;
   }
   p.no-indent {
     text-indent: 0;
@@ -109,9 +109,9 @@
     margin-bottom: 6px;
   }
   .abstract-text {
-    font-size: 8.4pt;
+    font-size: 8.35pt;
     font-style: italic;
-    line-height: 1.14;
+    line-height: 1.13;
     text-indent: 1.15em;
   }
   .abstract-text b {
@@ -119,10 +119,10 @@
     font-weight: bold;
   }
   .index-terms {
-    font-size: 8.4pt;
+    font-size: 8.35pt;
     font-style: italic;
     margin-top: 3px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     text-indent: 1.15em;
   }
   .index-terms b {
@@ -133,18 +133,18 @@
   /* Lists */
   ul {
     margin-left: 1.3em;
-    margin-bottom: 3.5px;
+    margin-bottom: 3px;
   }
   li {
     margin-bottom: 1.5px;
-    font-size: 8.65pt;
-    line-height: 1.13;
+    font-size: 8.6pt;
+    line-height: 1.12;
     text-align: justify;
   }
 
   /* Tables */
   .table-wrapper {
-    margin: 5.5px 0;
+    margin: 5px 0;
     width: 100%;
     break-inside: avoid;
     text-align: center;
@@ -159,13 +159,13 @@
   table.ieee-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 7.1pt;
-    line-height: 1.09;
+    font-size: 7.0pt;
+    line-height: 1.08;
     margin: 0 auto;
   }
   table.ieee-table th, table.ieee-table td {
     border: 1px solid #444;
-    padding: 2.2px 3.2px;
+    padding: 2.0px 3.0px;
     text-align: left;
     vertical-align: top;
   }
@@ -175,80 +175,52 @@
     text-align: center;
   }
 
-  /* Diagram Box */
-  .diagram-box {
-    margin: 5.5px 0;
-    padding: 5px;
-    border: 1px solid #555;
-    background: #fdfdfd;
-    border-radius: 3px;
+  /* Figure Box */
+  .figure-box {
+    margin: 5px 0;
+    padding: 4px;
+    border: 1px solid #777;
+    background: #fff;
+    border-radius: 2px;
     break-inside: avoid;
     text-align: center;
   }
-  .diagram-caption {
-    font-size: 7.7pt;
+  .figure-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 1px;
+  }
+  .figure-caption {
+    font-size: 7.6pt;
     font-style: italic;
     margin-top: 3px;
     font-weight: 600;
-  }
-  .arch-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    font-size: 7.1pt;
-    text-align: center;
-  }
-  .arch-tier {
-    border: 1px solid #666;
-    border-radius: 2px;
-    padding: 3px;
-    background: #f8f9fa;
-  }
-  .arch-tier-title {
-    font-weight: bold;
-    color: #1a365d;
-    margin-bottom: 2px;
-  }
-  .arch-tier-content {
-    display: flex;
-    justify-content: space-around;
-    font-size: 6.8pt;
-    color: #333;
-  }
-  .arch-pill {
-    background: #e2e8f0;
-    padding: 1px 4px;
-    border-radius: 2px;
-    border: 1px solid #cbd5e1;
-  }
-  .arch-arrow {
-    font-size: 7.5pt;
-    color: #64748b;
-    line-height: 1;
   }
 
   .code-snippet {
     background: #f8f9fa;
     border: 1px solid #d1d5db;
     border-radius: 3px;
-    padding: 3.5px 5px;
+    padding: 3px 5px;
     font-family: "Courier New", Courier, monospace;
-    font-size: 7.0pt;
-    line-height: 1.12;
+    font-size: 6.9pt;
+    line-height: 1.11;
     text-align: left;
     white-space: pre-wrap;
-    margin: 3px 0;
+    margin: 2.5px 0;
   }
 
   /* Formula display */
   .formula-box {
     text-align: center;
     font-style: italic;
-    margin: 3px 0;
-    font-size: 8.3pt;
+    margin: 2.5px 0;
+    font-size: 8.2pt;
     background: #fbfbfb;
     border: 1px dashed #ccc;
-    padding: 2.5px;
+    padding: 2px;
     border-radius: 2px;
   }
 
@@ -258,9 +230,9 @@
     margin-left: 0;
   }
   .references-list li {
-    font-size: 7.35pt;
-    line-height: 1.10;
-    margin-bottom: 2.6px;
+    font-size: 7.3pt;
+    line-height: 1.09;
+    margin-bottom: 2.2px;
     padding-left: 1.35em;
     text-indent: -1.35em;
   }
@@ -412,44 +384,13 @@
   <!-- III. SYSTEM ARCHITECTURE -->
   <h2 class="section-title">III. System Architecture & Workflow</h2>
   <p>
-    JARVIS is designed as a decoupled four-tier system to ensure maintainability, low response latency, and seamless state synchronization. Fig. 1 illustrates the overall architecture and communication flow.
+    JARVIS is designed as a decoupled four-tier system to ensure maintainability, low response latency, and seamless state synchronization. Fig. 1 illustrates the modular structural decomposition and dataflow pathways of the complete system.
   </p>
 
-  <div class="diagram-box">
-    <div class="arch-grid">
-      <div class="arch-tier">
-        <div class="arch-tier-title">TIER 1: PRESENTATION LAYER (React 18 + Vite + Tailwind CSS)</div>
-        <div class="arch-tier-content">
-          <span class="arch-pill">Monaco Editor</span>
-          <span class="arch-pill">AI Tutor Dock</span>
-          <span class="arch-pill">1v1 Speed Duel</span>
-          <span class="arch-pill">Topic Pitfalls Tab</span>
-          <span class="arch-pill">User Analytics</span>
-        </div>
-      </div>
-      <div class="arch-arrow">&darr; JSON over HTTP / REST (Asynchronous CORS) &darr;</div>
-      <div class="arch-tier">
-        <div class="arch-tier-title">TIER 2: APPLICATION & ORCHESTRATION (FastAPI Microservice)</div>
-        <div class="arch-tier-content">
-          <span class="arch-pill">/api/auth (JWT)</span>
-          <span class="arch-pill">/api/ai (5-Stage Scaffolding)</span>
-          <span class="arch-pill">/api/progress (Streak & XP)</span>
-          <span class="arch-pill">Pydantic Validation</span>
-        </div>
-      </div>
-      <div class="arch-arrow">&darr; Parallel Vector Query &amp; Hardware Inference Dispatch &darr;</div>
-      <div style="display: flex; gap: 4px;">
-        <div class="arch-tier" style="flex: 1;">
-          <div class="arch-tier-title">TIER 3: INFERENCE ENGINE (Groq LPU)</div>
-          <div style="font-size: 6.7pt; color: #333;">LLaMA 3.3 70B Versatile &bull; Qwen 2.5 32B Fallback &bull; 750 Safe Token Budget</div>
-        </div>
-        <div class="arch-tier" style="flex: 1;">
-          <div class="arch-tier-title">TIER 4: RAG SUBSYSTEM (ChromaDB)</div>
-          <div style="font-size: 6.7pt; color: #333;">all-MiniLM-L6-v2 (384-d Dense Vectors) &bull; Cosine Similarity Metric &bull; 60 DSA Schemas</div>
-        </div>
-      </div>
-    </div>
-    <div class="diagram-caption">Fig. 1. Decoupled 4-tier system architecture and dataflow pipeline of JARVIS.</div>
+  <!-- FIGURE 1 (Report Architecture Diagram) -->
+  <div class="figure-box">
+    <img src="figures/fig_arch_uml.png" alt="System Architecture Diagram" class="figure-img" />
+    <div class="figure-caption">Fig. 1. Modular System Architecture and Multi-Tier Decomposition: (a) Architecture Overview, (b) AI Assistant Building Blocks, (c) Simulation & Content Management Layers, (d) RAG System Design Workflow.</div>
   </div>
 
   <h3 class="subsection-title">A. Tier 1: Presentation Layer</h3>
@@ -487,8 +428,14 @@
   <h2 class="section-title">IV. AI Tutor Pedagogical Engine</h2>
   <h3 class="subsection-title">A. 5-Stage Progressive Hint Pipeline</h3>
   <p>
-    To prevent premature solution exposure, JARVIS enforces a 5-level hint hierarchy. Each stage focuses on a specific aspect of the problem-solving workflow:
+    To prevent premature solution exposure, JARVIS enforces a 5-level hint hierarchy. Each stage focuses on a specific aspect of the problem-solving workflow. Fig. 2 details the AI pipeline and inference workflow.
   </p>
+
+  <!-- FIGURE 2 (Report AI Pipeline Diagram) -->
+  <div class="figure-box">
+    <img src="figures/fig_ai_pipeline.png" alt="AI Pipeline Workflow" class="figure-img" />
+    <div class="figure-caption">Fig. 2. Socratic AI & RAG Inference Workflow: (a) Prompt Process Pipeline, (b) ETL Ingestion Subsystem, (c) Concrete Model Runtime, (d) RAG Knowledge Query & Response Generation.</div>
+  </div>
 
   <div class="table-wrapper">
     <div class="table-caption">Table 2. The JARVIS 5-Stage Progressive Scaffolding Matrix</div>

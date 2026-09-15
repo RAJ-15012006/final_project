@@ -21,7 +21,8 @@ from services.llm_service import (
     get_approach_response,
     get_complexity_response,
     get_mistakes_response,
-    get_code_solution_response
+    get_code_solution_response,
+    get_interview_response
 )
 from services.rag_service import rag_service
 
@@ -158,6 +159,28 @@ async def get_code(request: CodeRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Code generation error: {str(e)}")
+
+
+# ── 7. Mock Interview Chat ────────────────────────────────────────────────────
+
+class InterviewMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+class InterviewRequest(BaseModel):
+    history: list[InterviewMessage] = []
+
+class InterviewResponse(BaseModel):
+    response: str
+
+@router.post("/interview", response_model=InterviewResponse, summary="Mock Interview Chat Turn")
+async def mock_interview(request: InterviewRequest):
+    try:
+        history = [{"role": m.role, "content": m.content} for m in request.history]
+        reply = get_interview_response(history)
+        return InterviewResponse(response=reply)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Interview service error: {str(e)}")
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────

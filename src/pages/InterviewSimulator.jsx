@@ -373,6 +373,7 @@ export default function InterviewSimulator() {
               type="primary" 
               size="large"
               icon={<ArrowRightOutlined />}
+              onClick={() => navigate('/mock-interview')}
               style={{
                 height: '64px',
                 padding: '0 48px',

@@ -35,6 +35,7 @@ import DFSMistakes from './pages/DFSMistakes';
 import RecursiveMistakes from './pages/RecursiveMistakes';
 import ArrayStringMistakes from './pages/ArrayStringMistakes';
 import InterviewSimulator from './pages/InterviewSimulator';
+import MockInterview from './pages/MockInterview';
 import MainLayout from './components/MainLayout';
 import ScrollToTop from './components/ScrollToTop';
 import { ConfigProvider, theme as antdTheme } from 'antd';
@@ -244,6 +245,14 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <InterviewSimulator />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/mock-interview" 
+        element={
+          <ProtectedRoute>
+            <MockInterview />
           </ProtectedRoute>
         } 
       />

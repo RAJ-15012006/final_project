@@ -34,11 +34,8 @@ dist-ssr
 Thumbs.db
 desktop.ini
 
-# Python backend
 backend/venv/
 backend/__pycache__/
-backend/**/__pycache__/
-backend/**/*.pyc
 backend/chroma_db/
-backend/.env
-update_chatbot.py
+paper/chrome_tmp/
+__pycache__/
